@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="backgammon.png">../images/backgammon.png</file>
+        <file alias="backgammon-32.png">../images/backgammon-32.png</file>
+        <file alias="backgammon.svg">../images/backgammon.svg</file>
+    </qresource>
+</RCC>

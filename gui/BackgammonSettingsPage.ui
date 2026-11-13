@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BackgammonSettingsPage</class>
+ <widget class="QWidget" name="BackgammonSettingsPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <widget class="QGroupBox" name="invitationsGroup">
+     <property name="title">
+      <string>Invitations</string>
+     </property>
+     <layout class="QVBoxLayout" name="invitationsLayout">
+      <item>
+       <widget class="QCheckBox" name="openWindowCheck">
+        <property name="text">
+         <string>Open the game window when an invitation arrives</string>
+        </property>
+        <property name="toolTip">
+         <string>When off, invitations wait in "Your games" on the Backgammon page</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="toasterCheck">
+        <property name="text">
+         <string>Show a toaster for new invitations</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="boardGroup">
+     <property name="title">
+      <string>Board</string>
+     </property>
+     <layout class="QVBoxLayout" name="boardLayout">
+      <item>
+       <layout class="QHBoxLayout" name="themeLayout">
+        <item>
+         <widget class="QLabel" name="themeLabel">
+          <property name="text">
+           <string>Colours:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="themeCombo">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="themePreview">
+        <property name="minimumSize">
+         <size>
+          <width>320</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="themeHint">
+        <property name="text">
+         <string>Open games change colour right away.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="soundsGroup">
+     <property name="title">
+      <string>Play sounds</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="soundsLayout">
+      <item>
+       <layout class="QHBoxLayout" name="volumeLayout">
+        <item>
+         <widget class="QLabel" name="volumeLabel">
+          <property name="text">
+           <string>Volume:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="volumeSlider">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="singleStep">
+           <number>5</number>
+          </property>
+          <property name="pageStep">
+           <number>10</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="volumeValue">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string notr="true">80%</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="eventsLabel">
+        <property name="text">
+         <string>Play a sound when (double-click an entry to hear it):</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QListWidget" name="eventsList"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="muteHint">
+        <property name="text">
+         <string>No sound plays while RetroShare's sounds are muted.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BackgammonGameWindow</class>
+ <widget class="QWidget" name="BackgammonGameWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Backgammon</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,1">
+   <item>
+    <widget class="QFrame" name="headerFrame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <layout class="QHBoxLayout" name="headerLayout">
+      <item>
+       <widget class="QLabel" name="avatarLabel">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="namesLayout">
+        <item>
+         <widget class="QLabel" name="opponentLabel">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="textFormat">
+           <enum>Qt::PlainText</enum>
+          </property>
+          <property name="text">
+           <string notr="true">Opponent</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="statusLabel">
+          <property name="textFormat">
+           <enum>Qt::PlainText</enum>
+          </property>
+          <property name="text">
+           <string>Connecting to opponent…</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="headerSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="acceptButton">
+        <property name="text">
+         <string>Accept</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="declineButton">
+        <property name="text">
+         <string>Decline</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="cubeOfferFrame">
+     <property name="styleSheet">
+      <string notr="true">QFrame#cubeOfferFrame { background: #fff4d6; border: 1px solid #e0b84a; border-radius: 6px; }</string>
+     </property>
+     <layout class="QHBoxLayout" name="cubeOfferLayout">
+      <item>
+       <widget class="QLabel" name="cubeOfferLabel">
+        <property name="font">
+         <font>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string notr="true">Your opponent doubles to 2.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="takeButton">
+        <property name="text">
+         <string>Take</string>
+        </property>
+        <property name="toolTip">
+         <string>Accept: the game goes on at twice the stakes and the cube is yours</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="dropButton">
+        <property name="text">
+         <string>Drop</string>
+        </property>
+        <property name="toolTip">
+         <string>Refuse: you lose this game at the current cube value</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="resultLabel">
+     <property name="styleSheet">
+      <string notr="true">QLabel { font-size: 20px; font-weight: bold; padding: 12px; color: white; background: #34343c; border: 2px solid #babac8; border-radius: 8px; }</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::PlainText</enum>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="playLayout" stretch="1,0">
+     <property name="spacing">
+      <number>10</number>
+     </property>
+     <item>
+      <widget class="BoardWidget" name="board" native="true"/>
+     </item>
+     <item>
+      <widget class="QWidget" name="sidePanel" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>220</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>300</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="sidePanelLayout" stretch="0,0,1,0">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="scoreGroup">
+          <property name="title">
+           <string>Score</string>
+          </property>
+          <layout class="QGridLayout" name="scoreLayout" columnstretch="1,0,0">
+           <item row="0" column="1">
+          <widget class="QLabel" name="pipsHeader">
+           <property name="text">
+            <string>Pips</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="0" column="2">
+          <widget class="QLabel" name="pointsHeader">
+           <property name="text">
+            <string>Points</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="1" column="0">
+          <widget class="QLabel" name="lbWhite">
+           <property name="text">
+            <string>White</string>
+           </property>
+          </widget>
+           </item>
+           <item row="1" column="1">
+          <widget class="QLabel" name="lbPipsWhite">
+           <property name="text">
+            <string>167</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="1" column="2">
+          <widget class="QLabel" name="lbScoreWhite">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>0</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="2" column="0">
+          <widget class="QLabel" name="lbBlack">
+           <property name="text">
+            <string>Black</string>
+           </property>
+          </widget>
+           </item>
+           <item row="2" column="1">
+          <widget class="QLabel" name="lbPipsBlack">
+           <property name="text">
+            <string>167</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="2" column="2">
+          <widget class="QLabel" name="lbScoreBlack">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>0</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+           </item>
+           <item row="3" column="0" colspan="3">
+          <widget class="QLabel" name="lbMatch">
+           <property name="text">
+            <string>First to 1 point wins</string>
+           </property>
+          </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="logLabel">
+          <property name="text">
+           <string>Game log</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="logList">
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::NoSelection</enum>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="buttonsLayout">
+          <item row="0" column="0">
+        <widget class="QPushButton" name="doubleButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Double</string>
+         </property>
+         <property name="toolTip">
+          <string>Offer to double the stakes before you roll. Your opponent takes (the cube becomes theirs) or drops (and loses the game at the current value).</string>
+         </property>
+        </widget>
+          </item>
+          <item row="0" column="1">
+        <widget class="QPushButton" name="rollButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Roll dice</string>
+         </property>
+         <property name="toolTip">
+          <string>Roll the dice for your turn</string>
+         </property>
+        </widget>
+          </item>
+          <item row="1" column="0">
+        <widget class="QPushButton" name="undoButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Undo</string>
+         </property>
+         <property name="toolTip">
+          <string>Take back the last checker you moved</string>
+         </property>
+        </widget>
+          </item>
+          <item row="1" column="1">
+        <widget class="QPushButton" name="endTurnButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>34</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>End turn</string>
+         </property>
+         <property name="toolTip">
+          <string>Play the moves you made and pass the dice</string>
+         </property>
+        </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BoardWidget</class>
+   <extends>QWidget</extends>
+   <header>gui/BoardWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

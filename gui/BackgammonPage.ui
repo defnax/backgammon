@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BackgammonPage</class>
+ <widget class="QWidget" name="BackgammonPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>620</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Backgammon</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,1,0,0">
+   <item>
+    <layout class="QHBoxLayout" name="titleLayout">
+     <item>
+      <widget class="QLabel" name="titleIcon">
+       <property name="minimumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="Backgammon_images.qrc">:/images/backgammon.png</pixmap>
+       </property>
+       <property name="scaledContents">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="titleLabel">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Backgammon</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="titleSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="introLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Play Backgammon or Long Nardy with any RetroShare identity. The game runs over an encrypted tunnel, so your opponent does not need to be your friend. Dice come from a seed both players contribute to, so neither side can pick the rolls.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="childrenCollapsible">
+      <bool>false</bool>
+     </property>
+     <widget class="QGroupBox" name="newGameGroup">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>360</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>New game</string>
+      </property>
+      <layout class="QVBoxLayout" name="newGameLayout" stretch="0,1,0">
+       <item>
+        <layout class="QFormLayout" name="setupForm">
+         <item row="0" column="0">
+          <widget class="QLabel" name="ownIdLabel">
+           <property name="text">
+            <string>Play as:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="GxsIdChooser" name="ownIdChooser"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="variantLabel">
+           <property name="text">
+            <string>Game:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="variantCombo">
+           <item>
+            <property name="text">
+             <string>Backgammon</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Long Nardy</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="lengthLabel">
+           <property name="text">
+            <string>Points to win:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="lengthSpin">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>10</number>
+           </property>
+           <property name="value">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTabWidget" name="opponentTabs">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="playersTab">
+          <attribute name="title">
+           <string>My players</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="playersLayout">
+           <item>
+            <widget class="QTreeWidget" name="playersList">
+             <property name="contextMenuPolicy">
+              <enum>Qt::CustomContextMenu</enum>
+             </property>
+             <property name="toolTip">
+              <string>Double-click a player to invite them</string>
+             </property>
+             <property name="rootIsDecorated">
+              <bool>false</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+             <property name="headerHidden">
+              <bool>true</bool>
+             </property>
+             <column>
+              <property name="text">
+               <string>Name</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="playersHint">
+             <property name="text">
+              <string>Players you have played with are added here. Add others from "All identities" with a right-click.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="identitiesTab">
+          <attribute name="title">
+           <string>All identities</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="identitiesLayout">
+           <item>
+            <widget class="FriendSelectionWidget" name="opponentSelection" native="true"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="inviteButton">
+         <property name="text">
+          <string>Invite to play</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QGroupBox" name="gamesGroup">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>1</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Your games</string>
+      </property>
+      <layout class="QVBoxLayout" name="gamesLayout" stretch="1,0">
+       <item>
+        <widget class="QListWidget" name="gamesList">
+         <property name="contextMenuPolicy">
+          <enum>Qt::CustomContextMenu</enum>
+         </property>
+         <property name="toolTip">
+          <string>Double-click a game to bring its window to the front</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="gamesHint">
+         <property name="text">
+          <string>Invitations from other players show up here (and open a game window, unless switched off in Preferences → Backgammon).</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="contactsOnlyCheck">
+     <property name="text">
+      <string>Only accept invitations from my contacts</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="serviceStatusLabel">
+     <property name="styleSheet">
+      <string notr="true">QLabel { color: #b00020; }</string>
+     </property>
+     <property name="text">
+      <string>The tunnel service is not available yet. Games can be started once RetroShare has finished starting.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionShowGame">
+   <property name="text">
+    <string>Show game</string>
+   </property>
+  </action>
+  <action name="actionAcceptInvite">
+   <property name="text">
+    <string>Accept invitation</string>
+   </property>
+  </action>
+  <action name="actionDeclineInvite">
+   <property name="text">
+    <string>Decline invitation</string>
+   </property>
+  </action>
+  <action name="actionAddPlayer">
+   <property name="text">
+    <string>Add to my players</string>
+   </property>
+  </action>
+  <action name="actionRemovePlayer">
+   <property name="text">
+    <string>Remove from my players</string>
+   </property>
+  </action>
+  <action name="actionInvite">
+   <property name="icon">
+    <iconset resource="Backgammon_images.qrc">
+     <normaloff>:/images/backgammon.png</normaloff>:/images/backgammon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Invite to play</string>
+   </property>
+   <property name="toolTip">
+    <string>Invite this identity to a game with the settings above</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GxsIdChooser</class>
+   <extends>QComboBox</extends>
+   <header>gui/gxs/GxsIdChooser.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FriendSelectionWidget</class>
+   <extends>QWidget</extends>
+   <header>gui/common/FriendSelectionWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="Backgammon_images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

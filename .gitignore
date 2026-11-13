@@ -1,0 +1,17 @@
+# Build output (qmake and CMake)
+Makefile
+Makefile.*
+object_script.*
+*.pro.user*
+CMakeLists.txt.user*
+lib/
+temp/
+debug/
+release/
+build*/
+*.o
+*.obj
+*.a
+*.dll
+*.so
+*.exe
