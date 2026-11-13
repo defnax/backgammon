@@ -28,6 +28,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="contactsOnlyCheck">
+        <property name="text">
+         <string>Only accept invitations from my contacts</string>
+        </property>
+        <property name="toolTip">
+         <string>Invitations from identities that are not in your contacts are ignored. Banned identities are always ignored.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="toasterCheck">
         <property name="text">
          <string>Show a toaster for new invitations</string>

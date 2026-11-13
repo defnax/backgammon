@@ -55,7 +55,7 @@ counter on the Backgammon toolbar button. *Preferences → Backgammon* chooses
 whether the game window opens by itself and whether the toaster shows (the
 toaster can also be switched off in *Preferences → Notify*).
 
-*Only accept invitations from my contacts* ignores invitations from
+*Only accept invitations from my contacts* (in *Preferences → Backgammon*) ignores invitations from
 identities that are not in your contacts. Banned identities are always
 ignored.
 

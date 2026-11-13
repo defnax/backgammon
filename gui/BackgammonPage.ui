@@ -271,13 +271,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="contactsOnlyCheck">
-     <property name="text">
-      <string>Only accept invitations from my contacts</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QLabel" name="serviceStatusLabel">
      <property name="styleSheet">
       <string notr="true">QLabel { color: #b00020; }</string>

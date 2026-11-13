@@ -23,6 +23,7 @@
 
 #include "BackgammonSettings.h"
 #include "BackgammonSounds.h"
+#include "services/BackgammonService.h"
 #include "BoardTheme.h"
 #include "BackgammonConstants.h"
 
@@ -50,6 +51,10 @@ BackgammonSettingsPage::BackgammonSettingsPage(QWidget *parent, Qt::WindowFlags 
     connect(ui->themeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &BackgammonSettingsPage::themeChanged);
     connect(ui->openWindowCheck, &QCheckBox::toggled, this, [](bool on) { BackgammonSettings::setOpenInvitationWindow(on); });
+    connect(ui->contactsOnlyCheck, &QCheckBox::toggled, this, [](bool on) {
+        BackgammonService::instance().setContactsOnly(on);
+        Settings->setValueToGroup(QStringLiteral("Backgammon"), QStringLiteral("ContactsOnly"), on);
+    });
     connect(ui->toasterCheck, &QCheckBox::toggled, this, [](bool on) { BackgammonSettings::setInvitationToaster(on); });
     connect(ui->soundsGroup, &QGroupBox::toggled, this, &BackgammonSettingsPage::soundsToggled);
     connect(ui->volumeSlider, &QSlider::valueChanged, this, &BackgammonSettingsPage::volumeChanged);
@@ -70,6 +75,8 @@ void BackgammonSettingsPage::load()
     const QSignalBlocker blockTheme(ui->themeCombo);
     const QSignalBlocker blockWindow(ui->openWindowCheck);
     const QSignalBlocker blockToaster(ui->toasterCheck);
+    const QSignalBlocker blockContacts(ui->contactsOnlyCheck);
+    ui->contactsOnlyCheck->setChecked(BackgammonService::instance().contactsOnly());
 
     ui->openWindowCheck->setChecked(BackgammonSettings::openInvitationWindow());
     ui->toasterCheck->setChecked(BackgammonSettings::invitationToaster());

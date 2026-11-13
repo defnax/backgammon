@@ -74,8 +74,6 @@ BackgammonPage::BackgammonPage(QWidget *parent)
     ui->lengthSpin->setRange(MIN_NUM_GAMES, MAX_NUM_GAMES);
     ui->lengthSpin->setValue(Settings->valueFromGroup(SettingsGroup, "Length", 1).toInt());
 
-    ui->contactsOnlyCheck->setChecked(service.contactsOnly());
-
     connect(ui->inviteButton, &QPushButton::clicked, this, &BackgammonPage::invite);
     connect(ui->actionInvite, &QAction::triggered, this, &BackgammonPage::invite);
     connect(ui->actionAddPlayer, &QAction::triggered, this, &BackgammonPage::addSelectedIdentity);
@@ -88,7 +86,6 @@ BackgammonPage::BackgammonPage(QWidget *parent)
     connect(ui->actionAcceptInvite, &QAction::triggered, this, &BackgammonPage::acceptSelectedInvitation);
     connect(ui->actionDeclineInvite, &QAction::triggered, this, &BackgammonPage::declineSelectedInvitation);
     connect(ui->actionShowGame, &QAction::triggered, this, [this] { showGame(ui->gamesList->currentItem()); });
-    connect(ui->contactsOnlyCheck, &QCheckBox::toggled, this, &BackgammonPage::contactsOnlyToggled);
     connect(&service, &BackgammonService::gamesChanged, this, &BackgammonPage::refreshGames);
 
     refreshGames();
@@ -317,8 +314,3 @@ void BackgammonPage::showGame(QListWidgetItem *item)
     }
 }
 
-void BackgammonPage::contactsOnlyToggled(bool checked)
-{
-    BackgammonService::instance().setContactsOnly(checked);
-    Settings->setValueToGroup(SettingsGroup, "ContactsOnly", checked);
-}

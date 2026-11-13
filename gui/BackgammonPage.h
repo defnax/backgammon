@@ -45,7 +45,6 @@ private slots:
     void refreshGames();
     void updateInviteButton();
     void showGame(QListWidgetItem *item);
-    void contactsOnlyToggled(bool checked);
 
     // "My players": identities kept to invite them again quickly.
     void addPlayer(const RsGxsId &id);
