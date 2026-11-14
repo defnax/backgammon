@@ -138,6 +138,39 @@ static QPixmap colourDot(const QColor &colour)
     return dot;
 }
 
+void BackgammonGameWindow::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    updateHeaderTextColour();
+}
+
+void BackgammonGameWindow::changeEvent(QEvent *event)
+{
+    QWidget::changeEvent(event);
+    // Another skin: the frames are restyled after this window, so look later.
+    if (event->type() == QEvent::StyleChange || event->type() == QEvent::PaletteChange)
+        QTimer::singleShot(0, this, &BackgammonGameWindow::updateHeaderTextColour);
+}
+
+// The skin styles only the direct children of QFrame#headerFrame (the two
+// player boxes), e.g. white text on the Standard skins' blue header. The
+// labels inside the boxes take over that text colour, so they are readable
+// with any skin and also without one.
+void BackgammonGameWindow::updateHeaderTextColour()
+{
+    for (QFrame *frame : { ui->oppFrame, ui->myFrame }) {
+        frame->ensurePolished();
+        const QColor colour = frame->palette().color(QPalette::WindowText);
+        for (QLabel *label : frame->findChildren<QLabel *>()) {
+            QPalette palette = label->palette();
+            if (palette.color(QPalette::WindowText) == colour)
+                continue;
+            palette.setColor(QPalette::WindowText, colour);
+            label->setPalette(palette);
+        }
+    }
+}
+
 void BackgammonGameWindow::updateHeader()
 {
     ui->oppName->setText(m_opponentName);
@@ -172,7 +205,7 @@ void BackgammonGameWindow::updateHeader()
         // The player who has to act now gets a highlighted box.
         const auto phase = match.phase();
         bool active = false;
-        if (m_phase == Playing) {
+        if (m_phase == Playing && !m_linkDown) {   // nobody can act while reconnecting
             if (phase == bg::Match::Phase::DoubleOffered)
                 active = side != match.onRoll();   // the one who must take or drop
             else if (phase == bg::Match::Phase::Rolling || phase == bg::Match::Phase::Moving)
@@ -213,6 +246,7 @@ void BackgammonGameWindow::setLinkDown(bool down)
     if (m_linkDown == down)
         return;
     m_linkDown = down;
+    updateHeader();
     refresh();
     updateButtons();
 }

@@ -223,7 +223,7 @@ void BackgammonService::handleStatus(const RsGxsTunnelId &id, uint32_t status)
 
     case RsGxsTunnelService::RS_GXS_TUNNEL_STATUS_TUNNEL_DN:
     case RsGxsTunnelService::RS_GXS_TUNNEL_STATUS_REMOTELY_CLOSED:
-        // The tunnel is shared with the other games (RetroChess, Connect Four...)
+        // The tunnel is shared with every other service using GXS tunnels
         // and one of them may have closed it. That says nothing about the
         // opponent having left: an 'R' or 'X' packet does. Dig it again.
         reconnect(id);

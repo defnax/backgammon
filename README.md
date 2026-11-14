@@ -72,13 +72,14 @@ to hear it. Nothing plays while RetroShare's sounds are muted.
 ## How it works
 
 * **Transport.** Every match uses a secured GXS tunnel between the two
-  identities (client service id `0x42474d4e`, "BGMN"), the same way the
-  Connect Four game in RetroChess does. The players do not need to be friends.
-  The tunnel between two identities is shared with RetroChess and Connect
-  Four, so a tunnel that goes down or is closed by another game does not end
-  the match: the plugin asks for the tunnel again every 10 seconds for up to
-  3 minutes, then both sides exchange their position (`P`/`Q`) and a turn
-  that was lost meanwhile is sent again. Only `R`/`X` mean the opponent left.
+  identities (client service id `0x42474d4e`, "BGMN"). The players do not
+  need to be friends. RetroShare keeps one tunnel per pair of identities and
+  shares it between all services that use GXS tunnels, so it can go down or be
+  closed by another service while a match is running. That does not end the
+  match: the plugin asks for the tunnel again every 10 seconds for up to
+  3 minutes; once it is back, both sides exchange their position (`P`/`Q`) and
+  a turn that was lost meanwhile is sent again. Only `R` (resign) or `X`
+  (quit) means the opponent left.
 * **Packets.** `"RBG2" | match token (16 bytes) | op | JSON`, with ops
   `I` invite, `O` invitation received (lets the inviter know the opponent is
   there and has the plugin), `A` accept, `S` start, `D` dice rolled, `T` turn (moves as text,

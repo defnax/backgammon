@@ -97,6 +97,8 @@ signals:
     void summaryChanged();
 
 protected:
+    void showEvent(QShowEvent *event) override;
+    void changeEvent(QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
@@ -124,6 +126,7 @@ private:
     bool confirmResign(const QString &question);
     void setPlayerName(bool own, const QString &name);
     void updateHeader();   // names, colours, pips, scores, whose turn
+    void updateHeaderTextColour();   // the skin's header text colour for the labels
 
     Ui::BackgammonGameWindow *ui;
     RsGxsId m_peer;

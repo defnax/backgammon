@@ -20,7 +20,10 @@ AvatarWidget#avatarWidget {
 /* ---- Game window: the players above the board ---- */
 
 /* The skin draws the header gradient (QFrame#headerFrame) but only styles its
-   direct children; the labels sit one level deeper, in the player boxes. */
+   direct children (the two player boxes); the labels sit one level deeper.
+   No text colour here: the window gives the labels the text colour the skin
+   gives the player boxes (white on the Standard header, normal text without
+   a skin). */
 QFrame#oppFrame,
 QFrame#myFrame {
 	border: 1px solid transparent;
@@ -31,7 +34,6 @@ QFrame#oppFrame QLabel,
 QFrame#myFrame QLabel {
 	background: transparent;
 	border: none;
-	color: white;
 }
 
 /* The player who has to act now (property "active" set by the window). */
