@@ -23,6 +23,7 @@
 
 #include "BackgammonConstants.h"
 #include "BackgammonSounds.h"
+#include "BackgammonStyle.h"
 #include "BoardTheme.h"
 #include "BoardWidget.h"
 
@@ -52,6 +53,7 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
       m_length(length)
 {
     ui->setupUi(this);
+    BackgammonStyle::apply(this);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(ICON_PATH));
 
@@ -61,7 +63,6 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
     m_ownName = QString::fromStdString(local.toStdString()).left(8);
     for (AvatarWidget *avatar : { ui->oppAvatar, ui->myAvatar }) {
         avatar->setFrameType(AvatarWidget::NO_FRAME);
-        avatar->setStyleSheet(QStringLiteral("AvatarWidget { border: none; padding: 0; background: transparent; }"));
     }
     ui->oppAvatar->setGxsId(peer);
     ui->myAvatar->setGxsId(local);
@@ -148,6 +149,8 @@ void BackgammonGameWindow::updateHeader()
         ui->scoreLabel->clear();
         ui->oppColour->clear();
         ui->myColour->clear();
+        BackgammonStyle::setActive(ui->oppFrame, false);
+        BackgammonStyle::setActive(ui->myFrame, false);
         return;
     }
 
@@ -175,10 +178,7 @@ void BackgammonGameWindow::updateHeader()
             else if (phase == bg::Match::Phase::Rolling || phase == bg::Match::Phase::Moving)
                 active = side == match.onRoll();
         }
-        const QString name = frame->objectName();
-        frame->setStyleSheet(active
-            ? QStringLiteral("QFrame#%1 { background: rgba(255, 196, 0, 45); border: 1px solid rgba(230, 170, 0, 160); border-radius: 8px; }").arg(name)
-            : QStringLiteral("QFrame#%1 { border: 1px solid transparent; border-radius: 8px; }").arg(name));
+        BackgammonStyle::setActive(frame, active);   // styled in gui/qss/Backgammon.qss
     }
 }
 

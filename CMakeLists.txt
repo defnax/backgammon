@@ -48,6 +48,7 @@ set(BACKGAMMON_HEADERS
     gui/BackgammonSettingsPage.h
     gui/BackgammonSettings.h
     gui/BackgammonSounds.h
+    gui/BackgammonStyle.h
     gui/BackgammonUserNotify.h
     gui/BoardTheme.h
     gui/BoardWidget.h
@@ -66,6 +67,7 @@ set(BACKGAMMON_FORMS
 set(BACKGAMMON_RESOURCES
     gui/Backgammon_images.qrc
     gui/Backgammon_sounds.qrc
+    gui/Backgammon_qss.qrc
 )
 
 add_library(Backgammon MODULE

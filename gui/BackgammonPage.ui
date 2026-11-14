@@ -272,9 +272,6 @@
    </item>
    <item>
     <widget class="QLabel" name="serviceStatusLabel">
-     <property name="styleSheet">
-      <string notr="true">QLabel { color: #b00020; }</string>
-     </property>
      <property name="text">
       <string>The tunnel service is not available yet. Games can be started once RetroShare has finished starting.</string>
      </property>

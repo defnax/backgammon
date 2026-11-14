@@ -22,6 +22,7 @@
 #include "ui_BackgammonPage.h"
 
 #include "BackgammonGameWindow.h"
+#include "BackgammonStyle.h"
 #include "BackgammonUserNotify.h"
 #include "ui_InvitationItem.h"
 #include "services/BackgammonService.h"
@@ -47,6 +48,7 @@ BackgammonPage::BackgammonPage(QWidget *parent)
       ui(new Ui::BackgammonPage)
 {
     ui->setupUi(this);
+    BackgammonStyle::apply(this);
 
     // The "New game" column keeps its minimum width; "Your games" takes the rest.
     ui->splitter->setStretchFactor(0, 0);
@@ -272,8 +274,6 @@ void BackgammonPage::refreshGames()
             rowUi.setupUi(row);
             // The inviting identity's avatar (loaded by AvatarWidget when known).
             rowUi.avatarWidget->setFrameType(AvatarWidget::NO_FRAME);
-            rowUi.avatarWidget->setStyleSheet(
-                QStringLiteral("AvatarWidget { border: none; padding: 0; background: transparent; }"));
             rowUi.avatarWidget->setDefaultAvatar(ICON_PATH);
             rowUi.avatarWidget->setGxsId(window->peerId());
             // "Invitation from Bob:" [Accept] [Decline] "Backgammon to 3 points"

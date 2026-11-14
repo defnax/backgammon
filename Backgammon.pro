@@ -73,6 +73,7 @@ HEADERS = BackgammonPlugin.h \
           gui/BackgammonGameWindow.h \
           gui/BackgammonSettingsPage.h \
           gui/BackgammonSounds.h \
+          gui/BackgammonStyle.h \
           gui/BoardTheme.h \
           gui/BoardWidget.h \
           gui/BackgammonSettings.h \
@@ -87,7 +88,8 @@ FORMS = gui/BackgammonPage.ui \
         gui/InvitationItem.ui
 
 RESOURCES = gui/Backgammon_images.qrc \
-            gui/Backgammon_sounds.qrc
+            gui/Backgammon_sounds.qrc \
+            gui/Backgammon_qss.qrc
 
 # The rules core has its own tests, built without Qt:
 #   g++ -std=c++17 -I core tests/core-test.cpp core/BgRules.cpp core/BgMatch.cpp -o core-test

@@ -1,0 +1,93 @@
+/*
+ * Backgammon plugin styles.
+ *
+ * Built into the plugin from gui/Backgammon_qss.qrc and applied to the game
+ * window, the Backgammon page and the invitation toaster. The rules are
+ * scoped by object name so they only touch the plugin's own widgets; the
+ * RetroShare skin (Standard light/dark, ...) still styles everything else.
+ */
+
+/* ---- Avatars: no frame, no background ---- */
+
+AvatarWidget#oppAvatar,
+AvatarWidget#myAvatar,
+AvatarWidget#avatarWidget {
+	border: none;
+	padding: 0;
+	background: transparent;
+}
+
+/* ---- Game window: the players above the board ---- */
+
+/* The skin draws the header gradient (QFrame#headerFrame) but only styles its
+   direct children; the labels sit one level deeper, in the player boxes. */
+QFrame#oppFrame,
+QFrame#myFrame {
+	border: 1px solid transparent;
+	border-radius: 8px;
+}
+
+QFrame#oppFrame QLabel,
+QFrame#myFrame QLabel {
+	background: transparent;
+	border: none;
+	color: white;
+}
+
+/* The player who has to act now (property "active" set by the window). */
+QFrame#oppFrame[active="true"],
+QFrame#myFrame[active="true"] {
+	background: rgba(255, 196, 0, 45);
+	border: 1px solid rgba(230, 170, 0, 160);
+}
+
+/* ---- Game window: "Your opponent doubles to 2." ---- */
+
+QFrame#cubeOfferFrame {
+	background: #fff4d6;
+	border: 1px solid #e0b84a;
+	border-radius: 6px;
+}
+
+QFrame#cubeOfferFrame QLabel {
+	background: transparent;
+	border: none;
+	color: #1a1a1a;
+}
+
+/* ---- Game window: the result shown over the board ---- */
+
+QLabel#resultLabel {
+	font-size: 20px;
+	font-weight: bold;
+	padding: 12px;
+	color: white;
+	background: #34343c;
+	border: 2px solid #babac8;
+	border-radius: 8px;
+}
+
+/* ---- Backgammon page ---- */
+
+QLabel#serviceStatusLabel {
+	color: #b00020;
+}
+
+/* ---- Invitation toaster ---- */
+
+BackgammonToaster QPushButton#toasterButton {
+	border: 1px solid #199909;
+	font-size: 12pt;
+	color: white;
+	min-height: 24px;
+	border-radius: 6px;
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0.67, stop: 0 #22c70d, stop: 1 #116a06);
+}
+
+BackgammonToaster QPushButton#toasterButton:hover {
+	border-color: #35d51f;
+}
+
+BackgammonToaster QPushButton#toasterButton:pressed {
+	background-color: #116a06;
+}

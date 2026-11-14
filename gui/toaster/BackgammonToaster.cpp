@@ -22,6 +22,7 @@
 
 #include "gui/BackgammonGameWindow.h"
 #include "gui/BackgammonConstants.h"
+#include "gui/BackgammonStyle.h"
 
 #include "gui/common/AvatarWidget.h"
 
@@ -30,10 +31,9 @@ BackgammonToaster::BackgammonToaster(BackgammonGameWindow *invitation)
       m_invitation(invitation)
 {
     ui.setupUi(this);
+    BackgammonStyle::apply(this);
     ui.avatarWidget->setFrameType(AvatarWidget::NO_FRAME);
     ui.avatarWidget->setDefaultAvatar(ICON_PATH);
-    ui.avatarWidget->setStyleSheet(
-        QStringLiteral("AvatarWidget { border: none; padding: 0; background: transparent; }"));
     ui.toasterLabel->setText(tr("Backgammon invitation"));
 
     if (invitation) {
@@ -43,12 +43,6 @@ BackgammonToaster::BackgammonToaster(BackgammonGameWindow *invitation)
                                   .arg(invitation->opponentName(), game,
                                        tr("%n point(s)", "", invitation->matchLength())));
         ui.toasterButton->setText(tr("Accept"));
-        ui.toasterButton->setStyleSheet(QStringLiteral(
-            "QPushButton { border: 1px solid #199909; font-size: 12pt; color: white; min-height: 24px;"
-            " border-radius: 6px; background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0.67,"
-            " stop: 0 #22c70d, stop: 1 #116a06); }"
-            "QPushButton:hover { border-color: #35d51f; }"
-            "QPushButton:pressed { background-color: #116a06; }"));
         // The invitation was answered or withdrawn meanwhile.
         connect(invitation, &QObject::destroyed, this, &QWidget::hide);
         connect(invitation, &BackgammonGameWindow::summaryChanged, this, [this] {
