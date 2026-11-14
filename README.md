@@ -3,6 +3,9 @@
 A RetroShare plugin to play **Backgammon** and **Long Nardy** with any
 RetroShare identity. 
 
+<img width="990" height="664" alt="image" src="https://github.com/user-attachments/assets/53bdcbd9-b9fc-4e41-bcf3-6c7221804b0b" />
+
+
 ## Build
 
 Put the folder in `RetroShare/plugins/` (next to RetroChess) and build it like
