@@ -80,7 +80,8 @@ to hear it. Nothing plays while RetroShare's sounds are muted.
   3 minutes, then both sides exchange their position (`P`/`Q`) and a turn
   that was lost meanwhile is sent again. Only `R`/`X` mean the opponent left.
 * **Packets.** `"RBG2" | match token (16 bytes) | op | JSON`, with ops
-  `I` invite, `A` accept, `S` start, `D` dice rolled, `T` turn (moves as text,
+  `I` invite, `O` invitation received (lets the inviter know the opponent is
+  there and has the plugin), `A` accept, `S` start, `D` dice rolled, `T` turn (moves as text,
   `"24/18 13/11"`, `"bar/20"`, `"6/off"`), `C` double,
   `K` take, `N` drop, `P`/`Q` position after a reconnection, `R` resign and
   `X` leave. See `services/BackgammonService.h`.

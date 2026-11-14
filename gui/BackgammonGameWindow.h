@@ -56,6 +56,8 @@ public:
 
     Phase phase() const { return m_phase; }
     void setPhase(Phase phase);
+    // Progress of an invitation we sent, shown while Connecting/Waiting.
+    void setWaitingDetail(const QString &text);
 
     RsGxsId peerId() const { return m_peer; }
     RsGxsId localId() const { return m_local; }
@@ -132,6 +134,7 @@ private:
     bool m_linkDown { false };
     bool m_localWhite { true };
     QString m_opponentName;
+    QString m_waitingDetail;
 
     std::unique_ptr<bg::Match> m_match;
     QByteArray m_seed;

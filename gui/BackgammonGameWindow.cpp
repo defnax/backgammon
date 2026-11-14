@@ -133,6 +133,12 @@ void BackgammonGameWindow::setPhase(Phase phase)
     updateButtons();
 }
 
+void BackgammonGameWindow::setWaitingDetail(const QString &text)
+{
+    m_waitingDetail = text;
+    refresh();
+}
+
 void BackgammonGameWindow::setLinkDown(bool down)
 {
     if (m_linkDown == down)
@@ -158,8 +164,11 @@ void BackgammonGameWindow::refresh()
 
     QString text;
     switch (m_phase) {
-    case Connecting: text = tr("Connecting to opponent…"); break;
-    case Waiting:    text = tr("Waiting for your opponent to accept (%1, %2)").arg(variant, points); break;
+    case Connecting:
+    case Waiting:
+        text = m_waitingDetail.isEmpty() ? tr("Waiting for your opponent to accept") : m_waitingDetail;
+        text += QStringLiteral(" (%1, %2)").arg(variant, points);
+        break;
     case Offered:    text = tr("Invites you to play %1 to %2").arg(variant, points); break;
     case Confirming: text = tr("Starting the game…"); break;
     case Playing: {

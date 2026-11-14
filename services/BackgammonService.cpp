@@ -33,6 +33,9 @@
 #include <QRandomGenerator>
 #include <QTimer>
 #include <QUuid>
+#include <QElapsedTimer>
+
+#include <memory>
 
 #include <cstdlib>
 #include <cstring>
@@ -47,6 +50,10 @@ constexpr uint32_t MaxPacketSize = 64 * 1024;
 constexpr int NonceSize = 32;
 constexpr int InviteTimeoutMs = 120000;
 constexpr int AcceptRetryMs = 3000;
+// Invitation progress (see watchInvitation()).
+constexpr int InviteCheckMs = 2000;
+constexpr int ReachTimeoutMs = 90000;      // no tunnel: offline or unreachable (turtle tunnels can take a while)
+constexpr int DeliveryTimeoutMs = 30000;   // tunnel up but no 'O': plugin missing
 constexpr int MaxPendingInvitations = 10;
 // How long a match survives a dropped tunnel before it is abandoned.
 constexpr int LinkGraceMs = 180000;
@@ -332,6 +339,14 @@ void BackgammonService::handlePacket(const RsGxsTunnelId &id, const QByteArray &
         }
         break;
 
+    case 'O':
+        if (session.inviter && window->phase() == BackgammonGameWindow::Waiting && !session.delivered) {
+            session.delivered = true;
+            window->setWaitingDetail(BackgammonGameWindow::tr("%1 has your invitation. Waiting for an answer…")
+                                         .arg(window->opponentName()));
+        }
+        break;
+
     case 'A': {
         if (!session.inviter)
             break;
@@ -459,19 +474,74 @@ bool BackgammonService::invite(const RsGxsId &peer, const RsGxsId &local, bg::Va
     // the invitation goes out when the tunnel reports it can talk.
     sendInvite(id);
 
-    QPointer<BackgammonGameWindow> guard(window);
-    const QByteArray token = session.token;
-    QTimer::singleShot(InviteTimeoutMs, window, [this, id, token, guard] {
-        if (guard && (guard->phase() == BackgammonGameWindow::Waiting
-                      || guard->phase() == BackgammonGameWindow::Connecting)) {
-            send(id, token, 'X');
-            guard->finish(BackgammonGameWindow::tr("Invitation expired"));
-        }
-    });
-
+    watchInvitation(id);
     window->show();
     notifyGamesChanged();
     return true;
+}
+
+void BackgammonService::watchInvitation(const RsGxsTunnelId &id)
+{
+    // Tells the inviter what is going on instead of a silent wait:
+    //   1. the tunnel to the identity comes up (it is online and reachable),
+    //   2. its plugin confirms the invitation arrived ('O'),
+    //   3. the player answers.
+    // Each step has its own time limit and its own message.
+    auto it = m_sessions.find(id);
+    if (it == m_sessions.end() || !it->second.window)
+        return;
+    BackgammonGameWindow *window = it->second.window;
+    const QByteArray token = it->second.token;
+    const QString name = window->opponentName();
+    window->setWaitingDetail(BackgammonGameWindow::tr("Looking for %1 on the network…").arg(name));
+
+    QPointer<BackgammonGameWindow> guard(window);
+    auto *timer = new QTimer(window);
+    auto started = std::make_shared<QElapsedTimer>();
+    auto reachedAt = std::make_shared<qint64>(-1);
+    started->start();
+
+    connect(timer, &QTimer::timeout, window, [this, id, token, guard, timer, started, reachedAt] {
+        auto session = m_sessions.find(id);
+        if (!guard || session == m_sessions.end() || session->second.token != token
+                || (guard->phase() != BackgammonGameWindow::Connecting
+                    && guard->phase() != BackgammonGameWindow::Waiting)) {
+            timer->stop();
+            timer->deleteLater();
+            return;
+        }
+        const QString name = guard->opponentName();
+        const qint64 elapsed = started->elapsed();
+
+        // The tunnel may be shared and already up: ask its state.
+        RsGxsTunnelService::GxsTunnelInfo info;
+        const bool canTalk = m_net && m_net->getTunnelInfo(id, info)
+                             && info.tunnel_status == RsGxsTunnelService::RS_GXS_TUNNEL_STATUS_CAN_TALK;
+        if (canTalk && *reachedAt < 0) {
+            *reachedAt = elapsed;
+            if (!session->second.delivered)
+                guard->setWaitingDetail(BackgammonGameWindow::tr("%1 is online, sending the invitation…").arg(name));
+        }
+
+        QString failure;
+        if (*reachedAt < 0 && elapsed > ReachTimeoutMs)
+            failure = BackgammonGameWindow::tr("%1 could not be reached. They may be offline, or their RetroShare "
+                                               "is not connected to the network yet.").arg(name);
+        else if (*reachedAt >= 0 && !session->second.delivered && elapsed - *reachedAt > DeliveryTimeoutMs)
+            failure = BackgammonGameWindow::tr("%1 is online but did not receive the invitation. They may not have "
+                                               "the Backgammon plugin installed or enabled.").arg(name);
+        else if (elapsed > InviteTimeoutMs)
+            failure = session->second.delivered
+                          ? BackgammonGameWindow::tr("%1 did not answer your invitation.").arg(name)
+                          : BackgammonGameWindow::tr("Invitation expired");
+        if (!failure.isEmpty()) {
+            send(id, token, 'X');
+            guard->finish(failure);
+            timer->stop();
+            timer->deleteLater();
+        }
+    });
+    timer->start(InviteCheckMs);
 }
 
 void BackgammonService::sendInvite(const RsGxsTunnelId &id)
@@ -539,6 +609,8 @@ void BackgammonService::handleInvite(const RsGxsTunnelId &id, const QByteArray &
                                               type, length);
     session.window = window;
     window->setPhase(BackgammonGameWindow::Offered);
+    // Tell the inviter the invitation arrived (and that this plugin exists).
+    send(id, token, 'O');
     // The window opens now, or later from "Your games" or the toaster.
     if (crossed || BackgammonSettings::openInvitationWindow())
         window->show();

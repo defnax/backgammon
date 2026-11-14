@@ -42,6 +42,8 @@
 // Packet: "RBG2" | match token (16 bytes) | op (1 byte) | JSON object
 //
 //   I  invite   {"v":2,"variant":"classic"|"nardy","length":n,"commit":hex}
+//   O  offered  {} the invitation arrived and is shown (inviter knows the
+//               opponent is there and has the plugin)
 //   A  accept   {"nonce":hex}
 //   S  start    {"nonce":hex}
 //   D  dice     {"g":game,"p":ply}
@@ -101,6 +103,7 @@ private:
         QByteArray localNonce;
         QByteArray peerNonce;
         QByteArray commit; // opponent's commitment, when we were invited
+        bool delivered = false; // the opponent confirmed the invitation ('O')
         QJsonObject lastTurn; // last turn sent, resent if the opponent missed it
         QJsonObject offer;    // last double we offered
         char answerOp = 0;    // our answer to the opponent's last double
@@ -122,6 +125,7 @@ private:
     BackgammonGameWindow *makeWindow(const RsGxsTunnelId &id, const RsGxsId &peer,
                                      const RsGxsId &local, bg::Variant type, int length);
     void sendInvite(const RsGxsTunnelId &id);
+    void watchInvitation(const RsGxsTunnelId &id);
     void accept(const RsGxsTunnelId &id);
     void start(const RsGxsTunnelId &id);
     void retire(const RsGxsTunnelId &id);
