@@ -62,7 +62,11 @@ public:
     // Buttons on the board itself, like online backgammon: "Roll" (and
     // "Double") while the local player has to roll, an undo button on the
     // bar while moving, and the dice confirm the turn once it is complete.
-    void setRollPrompt(bool roll, bool canDouble);
+    void setRollPrompt(bool roll);
+    // "Double" button on the board: shown during the local player's turn
+    // before rolling in a match with the cube, clickable when doubling is
+    // allowed (the cube itself is clickable then too).
+    void setDoubleButton(bool shown, bool enabled);
 
     QSize sizeHint() const override { return QSize(660, 500); }
     QSize minimumSizeHint() const override { return QSize(330, 250); }
@@ -74,6 +78,9 @@ signals:
     void rollRequested();
     void doubleRequested();
     void endTurnRequested();
+    // Space left and right of the drawn board inside the widget, so that
+    // things above it (the players) can line up with its edges.
+    void boardMarginsChanged(int left, int right);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -81,6 +88,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void leaveEvent(QEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     // Board geometry in board units: 16.5 x 12.5 with the frame.
@@ -115,9 +123,12 @@ private:
     void drawDie(QPainter &p, const QRectF &rect, int value, qreal opacity) const;
     void drawCube(QPainter &p) const;
     void drawOverlayButtons(QPainter &p) const;
-    void drawPill(QPainter &p, const QRectF &rect, const QString &text, bool hover) const;
+    enum PillIcon { NoIcon, DiceIcon, CubeIcon };
+    void drawPill(QPainter &p, const QRectF &rect, const QString &text, bool hover, PillIcon icon = NoIcon) const;
+    void drawDiceIcon(QPainter &p, const QRectF &area) const;
 
-    enum Button { NoButton, RollButton, DoubleButton, UndoButton, ConfirmButton };
+    enum Button { NoButton, RollButton, DoubleButton, UndoButton, ConfirmButton, CubeButton };
+    QRectF cubeRect() const;
     QRectF buttonRect(Button button) const;
     QRectF diceArea() const;
     Button buttonAt(const QPointF &pos) const;
@@ -140,6 +151,7 @@ private:
     QPointF m_dragPos;
     QPointF m_pressPos;
     bool m_rollPrompt = false;
-    bool m_doublePrompt = false;
+    bool m_doubleShown = false;
+    bool m_doubleEnabled = false;
     Button m_hover = NoButton;
 };

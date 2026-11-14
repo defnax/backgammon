@@ -21,11 +21,13 @@
 #include "BoardWidget.h"
 #include "BoardTheme.h"
 
+#include <QFontMetricsF>
 #include <QLinearGradient>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QRadialGradient>
+#include <QToolTip>
 
 #include <algorithm>
 
@@ -164,10 +166,16 @@ void BoardWidget::play(const bg::Move &move)
     emit movesChanged();
 }
 
-void BoardWidget::setRollPrompt(bool roll, bool canDouble)
+void BoardWidget::setRollPrompt(bool roll)
 {
     m_rollPrompt = roll;
-    m_doublePrompt = roll && canDouble;
+    update();
+}
+
+void BoardWidget::setDoubleButton(bool shown, bool enabled)
+{
+    m_doubleShown = shown;
+    m_doubleEnabled = shown && enabled;
     update();
 }
 
@@ -185,7 +193,8 @@ QRectF BoardWidget::boardRect() const
 {
     const qreal scale = qMin(width() / Width, height() / Height);
     const qreal w = Width * scale, h = Height * scale;
-    return QRectF((width() - w) / 2, (height() - h) / 2, w, h);
+    // Centred across, at the top: the players' row sits right above it.
+    return QRectF((width() - w) / 2, 0, w, h);
 }
 
 qreal BoardWidget::unit() const
@@ -277,6 +286,7 @@ void BoardWidget::mousePressEvent(QMouseEvent *event)
     case DoubleButton:  emit doubleRequested(); return;
     case UndoButton:    undo(); return;
     case ConfirmButton: emit endTurnRequested(); return;
+    case CubeButton:    emit doubleRequested(); return;
     case NoButton:      break;
     }
     if (m_legal.empty())
@@ -322,8 +332,15 @@ void BoardWidget::mouseMoveEvent(QMouseEvent *event)
     }
     if (hover != NoButton) {
         setCursor(Qt::PointingHandCursor);
+        if (hover == CubeButton)
+            QToolTip::showText(mapToGlobal(pos.toPoint()), tr("Double"), this);
         return;
     }
+    // Disabled Double button: say why it cannot be clicked.
+    if (m_doubleShown && !m_doubleEnabled && buttonRect(DoubleButton).contains(pos))
+        QToolTip::showText(mapToGlobal(pos.toPoint()),
+                           tr("You can double before rolling when the cube is in the middle or yours "
+                              "(not in the Crawford game)."), this);
     const int point = hitTest(pos);
     const bool movable = !m_legal.empty() && point >= 0 && point != bg::OffPoint && !destinations(point).empty();
     setCursor(movable ? Qt::OpenHandCursor : Qt::ArrowCursor);
@@ -361,6 +378,13 @@ void BoardWidget::mouseReleaseEvent(QMouseEvent *event)
     }
     // A click without moving keeps the checker selected: click the destination.
     update();
+}
+
+void BoardWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    const QRectF board = boardRect();
+    emit boardMarginsChanged(qRound(board.left()), qRound(width() - board.right()));
 }
 
 void BoardWidget::leaveEvent(QEvent *event)
@@ -648,17 +672,22 @@ void BoardWidget::drawDice(QPainter &p) const
     }
 }
 
-void BoardWidget::drawCube(QPainter &p) const
+QRectF BoardWidget::cubeRect() const
 {
-    if (!m_cubeVisible)
-        return;
-    const qreal u = unit();
     const qreal size = 0.9;
     qreal y = Frame + 6 - size / 2;                             // middle: nobody owns it
     if (m_cubeOwner)
         y = *m_cubeOwner == m_local ? Frame + 12 - 0.4 - size   // the local player's side
                                     : Frame + 0.4;
-    const QRectF face(toPixels(Frame + (SideBar - size) / 2, y), QSizeF(size * u, size * u));
+    return QRectF(toPixels(Frame + (SideBar - size) / 2, y), QSizeF(size * unit(), size * unit()));
+}
+
+void BoardWidget::drawCube(QPainter &p) const
+{
+    if (!m_cubeVisible)
+        return;
+    const qreal u = unit();
+    const QRectF face = cubeRect();
     const qreal radius = 0.14 * face.width();
 
     p.save();
@@ -669,7 +698,9 @@ void BoardWidget::drawCube(QPainter &p) const
     body.setColorAt(0.0, QColor("#ffffff"));
     body.setColorAt(1.0, QColor("#dedede"));
     p.setBrush(body);
-    p.setPen(QPen(QColor("#9a9a9a"), 0.03 * u));
+    // A cube that can be clicked to double gets the highlight colour.
+    p.setPen(m_doubleEnabled ? QPen(BoardTheme::current().highlight, (m_hover == CubeButton ? 0.1 : 0.06) * u)
+                             : QPen(QColor("#9a9a9a"), 0.03 * u));
     p.drawRoundedRect(face, radius, radius);
     QFont font = this->font();
     font.setBold(true);
@@ -717,8 +748,10 @@ BoardWidget::Button BoardWidget::buttonAt(const QPointF &pos) const
 {
     if (m_rollPrompt && buttonRect(RollButton).contains(pos))
         return RollButton;
-    if (m_doublePrompt && buttonRect(DoubleButton).contains(pos))
+    if (m_doubleEnabled && buttonRect(DoubleButton).contains(pos))
         return DoubleButton;
+    if (m_doubleEnabled && m_cubeVisible && cubeRect().contains(pos))
+        return CubeButton;
     if (!m_legal.empty() && !m_dragging) {
         if (canUndo() && buttonRect(UndoButton).contains(pos))
             return UndoButton;
@@ -728,31 +761,87 @@ BoardWidget::Button BoardWidget::buttonAt(const QPointF &pos) const
     return NoButton;
 }
 
-void BoardWidget::drawPill(QPainter &p, const QRectF &rect, const QString &text, bool hover) const
+void BoardWidget::drawPill(QPainter &p, const QRectF &rect, const QString &text, bool hover, PillIcon icon) const
 {
+    const qreal u = unit();
     const qreal radius = rect.height() / 2;
     p.save();
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 70));
-    p.drawRoundedRect(rect.translated(0, 0.06 * unit()), radius, radius);
+    p.drawRoundedRect(rect.translated(0, 0.06 * u), radius, radius);
     p.setBrush(hover ? QColor("#2a2a2a") : QColor("#000000"));
     p.drawRoundedRect(rect, radius, radius);
+
     QFont font = this->font();
     font.setBold(true);
-    font.setPixelSize(qMax(9, int(0.42 * unit())));
+    font.setPixelSize(qMax(9, int(0.42 * u)));
     p.setFont(font);
+
+    // Icon and text centred together: [icon] Text
+    const qreal iconSize = icon == NoIcon ? 0 : 0.5 * u;
+    const qreal gap = icon == NoIcon ? 0 : 0.22 * u;
+    const qreal textWidth = QFontMetricsF(font).horizontalAdvance(text);
+    const qreal left = rect.center().x() - (iconSize + gap + textWidth) / 2;
+    const QRectF iconRect(left, rect.center().y() - iconSize / 2, iconSize, iconSize);
+
+    if (icon == DiceIcon)
+        drawDiceIcon(p, iconRect);
+    else if (icon == CubeIcon) {
+        // The doubling cube: a small white square with a 2.
+        p.setPen(Qt::NoPen);
+        p.setBrush(Qt::white);
+        p.drawRoundedRect(iconRect, 0.08 * u, 0.08 * u);
+        QFont small = font;
+        small.setPixelSize(qMax(7, int(0.36 * u)));
+        p.setFont(small);
+        p.setPen(Qt::black);
+        p.drawText(iconRect, Qt::AlignCenter, QStringLiteral("2"));
+        p.setFont(font);
+    }
+
     p.setPen(Qt::white);
-    p.drawText(rect, Qt::AlignCenter, text);
+    p.drawText(QRectF(left + iconSize + gap, rect.top(), textWidth + 1, rect.height()),
+               Qt::AlignVCenter | Qt::AlignLeft, text);
     p.restore();
+}
+
+void BoardWidget::drawDiceIcon(QPainter &p, const QRectF &area) const
+{
+    // Two small dice, the back one tilted, like the icons of online games.
+    const qreal side = area.width() * 0.62;
+    auto die = [&](const QPointF &centre, qreal angle, const std::vector<QPointF> &pips) {
+        p.save();
+        p.translate(centre);
+        p.rotate(angle);
+        const QRectF face(-side / 2, -side / 2, side, side);
+        p.setPen(QPen(Qt::black, side * 0.08));
+        p.setBrush(Qt::white);
+        p.drawRoundedRect(face, side * 0.2, side * 0.2);
+        p.setPen(Qt::NoPen);
+        p.setBrush(Qt::black);
+        const qreal r = side * 0.1;
+        for (const QPointF &pip : pips)
+            p.drawEllipse(QPointF(face.left() + pip.x() * side, face.top() + pip.y() * side), r, r);
+        p.restore();
+    };
+    die(area.topLeft() + QPointF(side * 0.55, side * 0.55), -15,
+        { { 0.28, 0.28 }, { 0.72, 0.28 }, { 0.5, 0.5 }, { 0.28, 0.72 }, { 0.72, 0.72 } });
+    die(area.bottomRight() - QPointF(side * 0.55, side * 0.55), 12,
+        { { 0.3, 0.3 }, { 0.7, 0.7 } });
 }
 
 void BoardWidget::drawOverlayButtons(QPainter &p) const
 {
     const qreal u = unit();
     if (m_rollPrompt)
-        drawPill(p, buttonRect(RollButton), tr("Roll"), m_hover == RollButton);
-    if (m_doublePrompt)
-        drawPill(p, buttonRect(DoubleButton), tr("Double"), m_hover == DoubleButton);
+        drawPill(p, buttonRect(RollButton), tr("Roll"), m_hover == RollButton, DiceIcon);
+    if (m_doubleShown) {
+        p.save();
+        if (!m_doubleEnabled)
+            p.setOpacity(0.4);   // shown, but doubling is not allowed now
+        drawPill(p, buttonRect(DoubleButton), tr("Double"), m_hover == DoubleButton, CubeIcon);
+        p.restore();
+    }
 
     if (m_legal.empty() || m_dragging)
         return;

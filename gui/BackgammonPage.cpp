@@ -26,6 +26,7 @@
 #include "ui_InvitationItem.h"
 #include "services/BackgammonService.h"
 
+#include "gui/common/AvatarWidget.h"
 #include "gui/common/FriendSelectionWidget.h"
 #include "gui/gxs/GxsIdChooser.h"
 #include "gui/gxs/GxsIdDetails.h"
@@ -269,6 +270,12 @@ void BackgammonPage::refreshGames()
             auto *row = new QWidget;
             Ui::InvitationItem rowUi;
             rowUi.setupUi(row);
+            // The inviting identity's avatar (loaded by AvatarWidget when known).
+            rowUi.avatarWidget->setFrameType(AvatarWidget::NO_FRAME);
+            rowUi.avatarWidget->setStyleSheet(
+                QStringLiteral("AvatarWidget { border: none; padding: 0; background: transparent; }"));
+            rowUi.avatarWidget->setDefaultAvatar(ICON_PATH);
+            rowUi.avatarWidget->setGxsId(window->peerId());
             // "Invitation from Bob:" [Accept] [Decline] "Backgammon to 3 points"
             const QString details = tr("%1 to %2").arg(game, tr("%n point(s)", "", window->matchLength()));
             const QString text = tr("Invitation from %1: %2").arg(window->opponentName(), details);

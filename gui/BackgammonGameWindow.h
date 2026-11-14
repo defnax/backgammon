@@ -31,7 +31,6 @@
 
 namespace Ui { class BackgammonGameWindow; }
 
-class QPixmap;
 
 // One match against one opponent: the board, the score, the game log and
 // the buttons. The rules live in bg::Match; this window turns clicks into
@@ -123,7 +122,8 @@ private:
     void announceRoll(bg::Side side);
     void log(const QString &text);
     bool confirmResign(const QString &question);
-    void setOpponentDetails(const QString &name, const QPixmap &avatar);
+    void setPlayerName(bool own, const QString &name);
+    void updateHeader();   // names, colours, pips, scores, whose turn
 
     Ui::BackgammonGameWindow *ui;
     RsGxsId m_peer;
@@ -134,6 +134,7 @@ private:
     bool m_linkDown { false };
     bool m_localWhite { true };
     QString m_opponentName;
+    QString m_ownName;
     QString m_waitingDetail;
 
     std::unique_ptr<bg::Match> m_match;

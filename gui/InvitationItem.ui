@@ -27,21 +27,18 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QLabel" name="iconLabel">
+    <widget class="AvatarWidget" name="avatarWidget">
      <property name="minimumSize">
       <size>
-       <width>20</width>
-       <height>20</height>
+       <width>26</width>
+       <height>26</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>20</width>
-       <height>20</height>
+       <width>26</width>
+       <height>26</height>
       </size>
-     </property>
-     <property name="pixmap">
-      <pixmap resource="Backgammon_images.qrc">:/images/backgammon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -113,8 +110,14 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="Backgammon_images.qrc"/>
- </resources>
+ <customwidgets>
+  <customwidget>
+   <class>AvatarWidget</class>
+   <extends>QLabel</extends>
+   <header>gui/common/AvatarWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
  <connections/>
 </ui>

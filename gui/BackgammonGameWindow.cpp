@@ -23,8 +23,10 @@
 
 #include "BackgammonConstants.h"
 #include "BackgammonSounds.h"
+#include "BoardTheme.h"
 #include "BoardWidget.h"
 
+#include "gui/common/AvatarWidget.h"
 #include "gui/gxs/GxsIdDetails.h"
 #include <retroshare/rsidentity.h>
 
@@ -32,6 +34,7 @@
 #include <QCloseEvent>
 #include <QCryptographicHash>
 #include <QMessageBox>
+#include <QPainter>
 #include <QTimer>
 #include <QtEndian>
 
@@ -52,19 +55,25 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(ICON_PATH));
 
-    m_opponentName = QString::fromStdString(peer.toStdString());
-    ui->opponentLabel->setText(m_opponentName);
-    ui->avatarLabel->setPixmap(GxsIdDetails::makeDefaultIcon(peer));
-    GxsIdDetails::process(peer, [](GxsIdDetailsType type, const RsIdentityDetails &details,
-                                   QObject *target, const QVariant &) {
-        if (type != GXS_ID_DETAILS_TYPE_DONE)
+    // Header: the opponent on the left, you on the right. AvatarWidget loads
+    // each avatar itself; the names arrive through GxsIdDetails.
+    m_opponentName = QString::fromStdString(peer.toStdString()).left(8);
+    m_ownName = QString::fromStdString(local.toStdString()).left(8);
+    for (AvatarWidget *avatar : { ui->oppAvatar, ui->myAvatar }) {
+        avatar->setFrameType(AvatarWidget::NO_FRAME);
+        avatar->setStyleSheet(QStringLiteral("AvatarWidget { border: none; padding: 0; background: transparent; }"));
+    }
+    ui->oppAvatar->setGxsId(peer);
+    ui->myAvatar->setGxsId(local);
+    auto nameLoaded = [](GxsIdDetailsType type, const RsIdentityDetails &details,
+                         QObject *target, const QVariant &data) {
+        if (type != GXS_ID_DETAILS_TYPE_DONE || details.mNickname.empty())
             return;
         auto *window = static_cast<BackgammonGameWindow *>(target);
-        QPixmap avatar;
-        if (details.mAvatar.mSize)
-            GxsIdDetails::loadPixmapFromData(details.mAvatar.mData, details.mAvatar.mSize, avatar);
-        window->setOpponentDetails(QString::fromUtf8(details.mNickname.c_str()), avatar);
-    }, this);
+        window->setPlayerName(data.toBool(), QString::fromUtf8(details.mNickname.c_str()));
+    };
+    GxsIdDetails::process(peer, nameLoaded, this, QVariant(false));
+    GxsIdDetails::process(local, nameLoaded, this, QVariant(true));
 
     ui->resultLabel->hide();
     ui->cubeOfferFrame->hide();
@@ -82,11 +91,17 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
     connect(ui->board, &BoardWidget::rollRequested, this, &BackgammonGameWindow::onRollClicked);
     connect(ui->board, &BoardWidget::doubleRequested, this, &BackgammonGameWindow::onDoubleClicked);
     connect(ui->board, &BoardWidget::endTurnRequested, this, &BackgammonGameWindow::onEndTurnClicked);
+    // The players' row has the width of the board, whatever the window size.
+    connect(ui->board, &BoardWidget::boardMarginsChanged, this, [this](int left, int right) {
+        ui->headerLayout->setContentsMargins(left, 0, right, 0);
+    });
     connect(ui->board, &BoardWidget::checkerMoved, this, [] {
         BackgammonSounds::play(BackgammonSounds::Checker);
     });
 
-    ui->lbMatch->setText(tr("First to %n point(s) wins", "", m_length));
+    ui->matchLabel->setText(tr("First to %n point(s)", "", m_length).toUpper());
+    connect(&BoardThemeNotifier::instance(), &BoardThemeNotifier::changed, this, &BackgammonGameWindow::updateHeader);
+    updateHeader();
     refresh();
     updateButtons();
 }
@@ -100,17 +115,71 @@ BackgammonGameWindow::~BackgammonGameWindow()
 /* Header                                                                  */
 /* ---------------------------------------------------------------------- */
 
-void BackgammonGameWindow::setOpponentDetails(const QString &name, const QPixmap &avatar)
+void BackgammonGameWindow::setPlayerName(bool own, const QString &name)
 {
-    if (!name.isEmpty()) {
+    if (own)
+        m_ownName = name;
+    else
         m_opponentName = name;
-        ui->opponentLabel->setText(name);
-    }
-    if (!avatar.isNull())
-        ui->avatarLabel->setPixmap(avatar);
-    if (m_match)
-        syncBoard();
+    updateHeader();
     refresh();
+}
+
+static QPixmap colourDot(const QColor &colour)
+{
+    QPixmap dot(14, 14);
+    dot.fill(Qt::transparent);
+    QPainter painter(&dot);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(QPen(colour.lightness() > 128 ? colour.darker(160) : colour.lighter(200), 1.2));
+    painter.setBrush(colour);
+    painter.drawEllipse(QRectF(1, 1, 12, 12));
+    return dot;
+}
+
+void BackgammonGameWindow::updateHeader()
+{
+    ui->oppName->setText(m_opponentName);
+    ui->myName->setText(tr("%1 (you)").arg(m_ownName));
+
+    if (!m_match) {
+        ui->oppDetails->clear();
+        ui->myDetails->clear();
+        ui->scoreLabel->clear();
+        ui->oppColour->clear();
+        ui->myColour->clear();
+        return;
+    }
+
+    const bg::Match &match = *m_match;
+    const BoardTheme &theme = BoardTheme::current();
+    // Match score in the side panel: "Bob 1 – 0 You"
+    ui->scoreLabel->setText(tr("%1 %2 – %3 You").arg(m_opponentName)
+                                .arg(match.score(remoteSide())).arg(match.score(localSide())));
+    for (const bool own : { false, true }) {
+        const bg::Side side = own ? localSide() : remoteSide();
+        QLabel *details = own ? ui->myDetails : ui->oppDetails;
+        QLabel *colour = own ? ui->myColour : ui->oppColour;
+        QFrame *frame = own ? ui->myFrame : ui->oppFrame;
+
+        details->setText(tr("%1 · %2 pips").arg(side == bg::White ? tr("White") : tr("Black"))
+                                           .arg(match.position().pipCount(side)));
+        colour->setPixmap(colourDot(theme.checker(side)));
+
+        // The player who has to act now gets a highlighted box.
+        const auto phase = match.phase();
+        bool active = false;
+        if (m_phase == Playing) {
+            if (phase == bg::Match::Phase::DoubleOffered)
+                active = side != match.onRoll();   // the one who must take or drop
+            else if (phase == bg::Match::Phase::Rolling || phase == bg::Match::Phase::Moving)
+                active = side == match.onRoll();
+        }
+        const QString name = frame->objectName();
+        frame->setStyleSheet(active
+            ? QStringLiteral("QFrame#%1 { background: rgba(255, 196, 0, 45); border: 1px solid rgba(230, 170, 0, 160); border-radius: 8px; }").arg(name)
+            : QStringLiteral("QFrame#%1 { border: 1px solid transparent; border-radius: 8px; }").arg(name));
+    }
 }
 
 QString BackgammonGameWindow::sideName(bg::Side side) const
@@ -264,12 +333,7 @@ void BackgammonGameWindow::syncBoard()
                         && match.onRoll() == localSide();
     board->setLegalTurns(myMove ? match.legalTurns() : std::vector<bg::Turn>());
 
-    ui->lbWhite->setText(m_localWhite ? tr("White (you)") : tr("White (%1)").arg(m_opponentName));
-    ui->lbBlack->setText(m_localWhite ? tr("Black (%1)").arg(m_opponentName) : tr("Black (you)"));
-    ui->lbScoreWhite->setText(QString::number(match.score(bg::White)));
-    ui->lbScoreBlack->setText(QString::number(match.score(bg::Black)));
-    ui->lbPipsWhite->setText(QString::number(match.position().pipCount(bg::White)));
-    ui->lbPipsBlack->setText(QString::number(match.position().pipCount(bg::Black)));
+    updateHeader();
 
     refresh();
     updateButtons();
@@ -300,7 +364,9 @@ void BackgammonGameWindow::updateButtons()
     ui->undoButton->setEnabled(mine && phase == bg::Match::Phase::Moving && ui->board->canUndo());
     ui->endTurnButton->setEnabled(mine && phase == bg::Match::Phase::Moving
                                   && (ui->board->turnComplete() || m_match->cannotMove()));
-    ui->board->setRollPrompt(ui->rollButton->isEnabled(), ui->doubleButton->isEnabled() && cube);
+    ui->board->setRollPrompt(ui->rollButton->isEnabled());
+    ui->board->setDoubleButton(cube && mine && phase == bg::Match::Phase::Rolling,
+                               ui->doubleButton->isEnabled());
 }
 
 void BackgammonGameWindow::log(const QString &text)
@@ -513,6 +579,7 @@ void BackgammonGameWindow::finish(const QString &message)
     m_linkDown = false;
     ui->cubeOfferFrame->hide();
     ui->board->setLegalTurns({});
+    updateHeader();   // nobody's turn any more
 
     ui->statusLabel->setText(message);
     ui->resultLabel->setText(message);
