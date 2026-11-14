@@ -26,6 +26,8 @@
 #include <QRectF>
 #include <QWidget>
 
+class QVariantAnimation;
+
 #include <optional>
 #include <vector>
 
@@ -120,7 +122,7 @@ private:
     void drawChecker(QPainter &p, const QPointF &centre, qreal radius, bg::Side side, bool highlight) const;
     void drawTrays(QPainter &p) const;
     void drawDice(QPainter &p) const;
-    void drawDie(QPainter &p, const QRectF &rect, int value, qreal opacity) const;
+    void drawDie(QPainter &p, const QRectF &rect, int value, qreal opacity, bg::Side roller) const;
     void drawCube(QPainter &p) const;
     void drawOverlayButtons(QPainter &p) const;
     enum PillIcon { NoIcon, DiceIcon, CubeIcon };
@@ -137,6 +139,13 @@ private:
     bg::Position m_position;           // position before the moves being played
     bg::Position m_shown;              // m_position with m_played applied
     std::vector<int> m_dice;
+    // Roll animation: a short tumble when new dice arrive. Only the dice
+    // area is repainted, and nothing runs when the animation is over.
+    QVariantAnimation *m_rollAnimation = nullptr;
+    qreal m_rollProgress = 1.0;    // 0 = just rolled, 1 = settled
+    int m_rollFaces[2] = { 1, 1 }; // faces shown while tumbling
+    int m_rollFrame = -1;
+    QRectF rollArea() const;
     bg::Side m_roller = bg::White;
     int m_cubeValue = 1;
     std::optional<bg::Side> m_cubeOwner;

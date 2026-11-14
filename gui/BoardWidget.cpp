@@ -27,11 +27,18 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QRadialGradient>
+#include <QRandomGenerator>
 #include <QToolTip>
+#include <QVariantAnimation>
 
 #include <algorithm>
+#include <cmath>
 
 namespace {
+constexpr int RollAnimationMs = 650;   // how long new dice tumble
+constexpr qreal RollDistance = 2.2;    // board units the rolling dice travel
+constexpr qreal Pi = 3.14159265358979323846;
+
 // Board units (one unit = one point = one checker diameter).
 constexpr qreal Frame = 0.25;
 constexpr qreal Width = 16.0 + 2 * Frame;
@@ -80,9 +87,49 @@ void BoardWidget::setPosition(const bg::Position &position)
 
 void BoardWidget::setDice(const std::vector<int> &dice, bg::Side roller)
 {
+    const bool newRoll = dice.size() >= 2 && (dice != m_dice || roller != m_roller);
     m_dice = dice;
     m_roller = roller;
     update();
+
+    if (!newRoll || !isVisible())
+        return;
+    if (!m_rollAnimation) {
+        m_rollAnimation = new QVariantAnimation(this);
+        m_rollAnimation->setStartValue(0.0);
+        m_rollAnimation->setEndValue(1.0);
+        m_rollAnimation->setDuration(RollAnimationMs);
+        connect(m_rollAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+            m_rollProgress = value.toReal();
+            // New faces about every 70 ms, slower towards the end.
+            const int frame = int(std::sqrt(m_rollProgress) * 9);
+            if (frame != m_rollFrame && m_rollProgress < 0.85) {
+                m_rollFrame = frame;
+                for (int &face : m_rollFaces)
+                    face = 1 + int(QRandomGenerator::global()->bounded(6));
+            }
+            update(rollArea().toAlignedRect());
+        });
+        connect(m_rollAnimation, &QVariantAnimation::finished, this, [this] {
+            m_rollProgress = 1.0;
+            update(rollArea().toAlignedRect());
+        });
+    }
+    m_rollAnimation->stop();
+    m_rollFrame = -1;
+    m_rollProgress = 0.0;
+    m_rollAnimation->start();
+}
+
+// The dice area plus the way the dice come in from (the bar side) and their
+// shadows: the only part repainted while the dice roll.
+QRectF BoardWidget::rollArea() const
+{
+    const qreal u = unit();
+    const QRectF area = diceArea();
+    const bool rightHalf = m_roller == m_local;
+    return area.adjusted(rightHalf ? -RollDistance * u - 0.6 * u : -0.6 * u, -0.8 * u,
+                         rightHalf ? 0.6 * u : RollDistance * u + 0.6 * u, 0.8 * u);
 }
 
 void BoardWidget::setCube(int value, std::optional<bg::Side> owner, bool visible)
@@ -465,25 +512,59 @@ void BoardWidget::drawPoints(QPainter &p) const
 
 void BoardWidget::drawChecker(QPainter &p, const QPointF &centre, qreal radius, bg::Side side, bool highlight) const
 {
+    // A raised rim lit from above with a recessed dish in the middle, on a
+    // soft shadow. All colours come from the theme's checker colour.
     const BoardTheme &theme = BoardTheme::current();
     const QColor base = theme.checker(side);
     const bool light = base.lightness() > 128;
+    const qreal r = radius * 0.96;
 
-    // Shadow
+    p.save();
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(0, 0, 0, 50));
-    p.drawEllipse(centre + QPointF(0.06 * radius, 0.1 * radius), radius, radius);
 
-    QRadialGradient gradient(centre - QPointF(0.35 * radius, 0.35 * radius), 1.4 * radius);
-    gradient.setColorAt(0.0, light ? base.lighter(108) : base.lighter(190));
-    gradient.setColorAt(1.0, light ? base.darker(118) : base);
-    p.setBrush(gradient);
-    p.setPen(QPen(highlight ? theme.highlight : (light ? base.darker(150) : base.lighter(170)),
-                  (highlight ? 0.12 : 0.05) * radius));
-    p.drawEllipse(centre, radius * 0.96, radius * 0.96);
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(light ? base.darker(125) : base.lighter(140), 0.04 * radius));
-    p.drawEllipse(centre, radius * 0.62, radius * 0.62);
+    // Soft shadow below the checker.
+    QRadialGradient shadow(centre + QPointF(0, 0.14 * r), 1.12 * r);
+    shadow.setColorAt(0.80, QColor(0, 0, 0, 70));
+    shadow.setColorAt(1.00, QColor(0, 0, 0, 0));
+    p.setBrush(shadow);
+    p.drawEllipse(centre + QPointF(0, 0.14 * r), 1.12 * r, 1.12 * r);
+
+    // Edge: a thin darker outline.
+    p.setBrush(light ? base.darker(135) : base.darker(115));
+    p.drawEllipse(centre, r, r);
+
+    // Rim: lighter at the top, darker at the bottom.
+    const qreal rim = r * 0.95;
+    QLinearGradient rimGradient(centre.x(), centre.y() - rim, centre.x(), centre.y() + rim);
+    rimGradient.setColorAt(0.0, light ? base.lighter(106) : base.lighter(185));
+    rimGradient.setColorAt(0.5, light ? base : base.lighter(130));
+    rimGradient.setColorAt(1.0, light ? base.darker(118) : base);
+    p.setBrush(rimGradient);
+    p.drawEllipse(centre, rim, rim);
+
+    // Dish: recessed, so its shading runs the other way (shadow at the top).
+    const qreal dish = r * 0.70;
+    const QPointF dishCentre = centre + QPointF(0, 0.03 * r);
+    QLinearGradient lip(dishCentre.x(), dishCentre.y() - dish, dishCentre.x(), dishCentre.y() + dish);
+    lip.setColorAt(0.0, light ? base.darker(130) : QColor(0, 0, 0));
+    lip.setColorAt(1.0, light ? base.lighter(108) : base.lighter(200));
+    p.setBrush(lip);
+    p.drawEllipse(dishCentre, dish, dish);
+
+    const qreal inner = dish * 0.94;
+    QLinearGradient dishGradient(dishCentre.x(), dishCentre.y() - inner, dishCentre.x(), dishCentre.y() + inner);
+    dishGradient.setColorAt(0.0, light ? base.darker(112) : base.darker(110));
+    dishGradient.setColorAt(1.0, light ? base.lighter(104) : base.lighter(150));
+    p.setBrush(dishGradient);
+    p.drawEllipse(dishCentre + QPointF(0, 0.02 * r), inner, inner);
+
+    // Movable checker or drag: a ring in the highlight colour.
+    if (highlight) {
+        p.setBrush(Qt::NoBrush);
+        p.setPen(QPen(theme.highlight, 0.12 * radius));
+        p.drawEllipse(centre, r - 0.06 * radius, r - 0.06 * radius);
+    }
+    p.restore();
 }
 
 void BoardWidget::drawCheckers(QPainter &p) const
@@ -582,7 +663,7 @@ void BoardWidget::drawTrays(QPainter &p) const
                           0.1 * u, 0.1 * u);
 }
 
-void BoardWidget::drawDie(QPainter &p, const QRectF &face, int value, qreal opacity) const
+void BoardWidget::drawDie(QPainter &p, const QRectF &face, int value, qreal opacity, bg::Side roller) const
 {
     static const QPointF pips[6][6] = {
         { { 0.50, 0.50 } },
@@ -604,14 +685,18 @@ void BoardWidget::drawDie(QPainter &p, const QRectF &face, int value, qreal opac
         p.drawRoundedRect(face.translated(0.04 * side, 0.07 * side).adjusted(-grow, -grow, grow, grow),
                           radius + grow, radius + grow);
     }
+    // The dice have the colour of the roller's checkers: light dice with dark
+    // pips for the light side, dark dice with light pips for the dark side.
+    const QColor base = BoardTheme::current().checker(roller);
+    const bool light = base.lightness() > 128;
     QLinearGradient body(face.topLeft(), face.bottomLeft());
-    body.setColorAt(0.0, QColor("#ffffff"));
-    body.setColorAt(1.0, QColor("#e4e4e4"));
+    body.setColorAt(0.0, light ? base.lighter(110) : base.lighter(170));
+    body.setColorAt(1.0, light ? base.darker(105) : base);
     p.setBrush(body);
-    p.setPen(QPen(QColor("#b5b5b5"), 0.02 * side));
+    p.setPen(QPen(light ? base.darker(130) : QColor(0, 0, 0, 160), 0.02 * side));
     p.drawRoundedRect(face, radius, radius);
     p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(QColor(255, 255, 255, 200), 0.03 * side));
+    p.setPen(QPen(light ? QColor(255, 255, 255, 200) : QColor(255, 255, 255, 40), 0.03 * side));
     p.drawRoundedRect(face.adjusted(0.04 * side, 0.04 * side, -0.04 * side, -0.04 * side), radius * 0.8, radius * 0.8);
 
     p.setPen(Qt::NoPen);
@@ -619,8 +704,8 @@ void BoardWidget::drawDie(QPainter &p, const QRectF &face, int value, qreal opac
     for (int i = 0; i < value; ++i) {
         const QPointF centre = face.topLeft() + QPointF(pips[value - 1][i].x() * side, pips[value - 1][i].y() * side);
         QRadialGradient pip(centre + QPointF(0.25 * r, 0.3 * r), r);
-        pip.setColorAt(0.0, QColor("#3a3a3a"));
-        pip.setColorAt(1.0, QColor("#0a0a0a"));
+        pip.setColorAt(0.0, light ? QColor("#3a3a3a") : QColor("#ffffff"));
+        pip.setColorAt(1.0, light ? QColor("#0a0a0a") : QColor("#d8d8d8"));
         p.setBrush(pip);
         p.drawEllipse(centre, r, r);
     }
@@ -666,9 +751,29 @@ void BoardWidget::drawDice(QPainter &p) const
     const QRectF area = diceArea();
     const qreal size = area.height();
     const qreal gap = 0.2 * u;
+    if (m_rollProgress >= 1.0) {
+        for (int i = 0; i < 2; ++i) {
+            const QRectF face(area.left() + i * (size + gap), area.top(), size, size);
+            drawDie(p, face, dice[i], 1.0 - 0.65 * used[i], m_roller);
+        }
+        return;
+    }
+
+    // Rolling: the dice come in from the bar side, spinning and hopping,
+    // and slow down until they lie in their place with the real faces.
+    const qreal t = m_rollProgress;
+    const qreal ease = 1.0 - std::pow(1.0 - t, 3);                     // fast, then slow
+    const qreal direction = m_roller == m_local ? -1.0 : 1.0;          // the bar is on that side
+    const qreal hop = std::abs(std::sin(t * 3.0 * Pi)) * (1.0 - t) * 0.35 * u;
     for (int i = 0; i < 2; ++i) {
         const QRectF face(area.left() + i * (size + gap), area.top(), size, size);
-        drawDie(p, face, dice[i], 1.0 - 0.65 * used[i]);
+        const QPointF offset(direction * (1.0 - ease) * (RollDistance + 0.4 * i) * u, -hop * (i ? 0.7 : 1.0));
+        const qreal angle = (1.0 - ease) * (i ? -320.0 : 400.0);
+        p.save();
+        p.translate(face.center() + offset);
+        p.rotate(angle);
+        drawDie(p, QRectF(-size / 2, -size / 2, size, size), t < 0.85 ? m_rollFaces[i] : dice[i], 1.0, m_roller);
+        p.restore();
     }
 }
 
