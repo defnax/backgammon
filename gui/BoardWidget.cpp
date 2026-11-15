@@ -453,6 +453,8 @@ void BoardWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
+    if (BoardTheme::useBackground())
+        p.fillRect(rect(), BoardTheme::current().background);
     drawFrame(p);
     drawPoints(p);
     drawTrays(p);

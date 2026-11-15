@@ -59,6 +59,11 @@ BackgammonSettingsWidget::BackgammonSettingsWidget(QWidget *parent)
 
     connect(ui->themeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &BackgammonSettingsWidget::themeChanged);
+    connect(ui->backgroundCheck, &QCheckBox::toggled, this, [this](bool on) {
+        BoardTheme::setUseBackground(on);
+        Settings->setValueToGroup(QStringLiteral("Backgammon"), QStringLiteral("ThemeBackground"), on);
+        updatePreview();
+    });
     connect(ui->openWindowCheck, &QCheckBox::toggled, this, [](bool on) { BackgammonSettings::setOpenInvitationWindow(on); });
     connect(ui->contactsOnlyCheck, &QCheckBox::toggled, this, [](bool on) {
         BackgammonService::instance().setContactsOnly(on);
@@ -99,6 +104,8 @@ void BackgammonSettingsWidget::load()
     const QSignalBlocker blockSlider(ui->volumeSlider);
     const QSignalBlocker blockList(ui->eventsList);
     const QSignalBlocker blockTheme(ui->themeCombo);
+    const QSignalBlocker blockBackground(ui->backgroundCheck);
+    ui->backgroundCheck->setChecked(BoardTheme::useBackground());
     const QSignalBlocker blockWindow(ui->openWindowCheck);
     const QSignalBlocker blockToaster(ui->toasterCheck);
     const QSignalBlocker blockContacts(ui->contactsOnlyCheck);

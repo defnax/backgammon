@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "BackgammonResultDialog.h"
 #include "core/BgMatch.h"
 
 #include <retroshare/rsids.h>
@@ -71,7 +72,10 @@ public:
     // toaster). Accepting shows the window.
     void acceptInvitation();
     void declineInvitation();
-    void finish(const QString &message);
+    // The match is over (or never started). Shows a small result popup
+    // when the window is open.
+    void finish(const QString &message,
+                BackgammonResultDialog::Outcome outcome = BackgammonResultDialog::Neutral);
     void setLinkDown(bool down);
     bool linkDown() const { return m_linkDown; }
 
@@ -97,6 +101,7 @@ signals:
     void summaryChanged();
 
 protected:
+    void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
     void changeEvent(QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -126,7 +131,8 @@ private:
     bool confirmResign(const QString &question);
     void setPlayerName(bool own, const QString &name);
     void updateHeader();   // names, colours, pips, scores, whose turn
-    void updateHeaderTextColour();   // the skin's header text colour for the labels
+    void updateHeaderTextColour();
+    void updateWindowTheme();   // background in the board's colours (optional)   // the skin's header text colour for the labels
 
     Ui::BackgammonGameWindow *ui;
     RsGxsId m_peer;
@@ -135,6 +141,7 @@ private:
     int m_length;
     Phase m_phase { Connecting };
     bool m_linkDown { false };
+    bool m_closing { false };   // no result popup while the window closes
     bool m_localWhite { true };
     QString m_opponentName;
     QString m_ownName;

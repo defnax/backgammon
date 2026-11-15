@@ -43,6 +43,28 @@ QFrame#myFrame[active="true"] {
 	border: 1px solid rgba(230, 170, 0, 160);
 }
 
+/* ---- Game window in the board's colours ----
+   Property "windowTheme" of the game window: "dark" or "light" background
+   (the colour itself comes from the board theme), empty when switched off.
+   Only the header and the side panel: popups of the window keep their look. */
+
+BackgammonGameWindow[windowTheme="dark"] QFrame#headerFrame,
+BackgammonGameWindow[windowTheme="light"] QFrame#headerFrame,
+BackgammonGameWindow[windowTheme="dark"] QWidget#sidePanel,
+BackgammonGameWindow[windowTheme="light"] QWidget#sidePanel {
+	background: transparent;
+}
+
+BackgammonGameWindow[windowTheme="dark"] QFrame#headerFrame QLabel,
+BackgammonGameWindow[windowTheme="dark"] QWidget#sidePanel QLabel {
+	color: white;
+}
+
+BackgammonGameWindow[windowTheme="light"] QFrame#headerFrame QLabel,
+BackgammonGameWindow[windowTheme="light"] QWidget#sidePanel QLabel {
+	color: #1a1a1a;
+}
+
 /* ---- Game window: "Your opponent doubles to 2." ---- */
 
 QFrame#cubeOfferFrame {
@@ -57,16 +79,33 @@ QFrame#cubeOfferFrame QLabel {
 	color: #1a1a1a;
 }
 
-/* ---- Game window: the result shown over the board ---- */
+/* ---- Result popup when a match ends (BackgammonResultDialog) ---- */
 
-QLabel#resultLabel {
+BackgammonResultDialog QLabel#titleLabel {
 	font-size: 20px;
 	font-weight: bold;
-	padding: 12px;
-	color: white;
-	background: #34343c;
-	border: 2px solid #babac8;
-	border-radius: 8px;
+}
+
+BackgammonResultDialog[outcome="won"] QLabel#titleLabel {
+	color: #2e9e44;
+}
+
+BackgammonResultDialog[outcome="lost"] QLabel#titleLabel {
+	color: #c0392b;
+}
+
+BackgammonResultDialog QLabel#messageLabel {
+	font-size: 13px;
+}
+
+BackgammonResultDialog QLabel#scoreLabel {
+	font-size: 15px;
+	font-weight: bold;
+}
+
+BackgammonResultDialog QPushButton {
+	min-width: 90px;
+	min-height: 26px;
 }
 
 /* ---- Backgammon page ---- */

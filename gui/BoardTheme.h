@@ -43,6 +43,7 @@ struct BoardTheme
     QColor whiteChecker;
     QColor blackChecker;
     QColor highlight;   // movable checkers and possible destinations
+    QColor background;  // around the board in the game window (optional)
 
     QColor checker(bg::Side side) const
     {
@@ -53,6 +54,9 @@ struct BoardTheme
     static const BoardTheme &current();
     // Unknown ids select the first theme.
     static void setCurrent(const QString &id);
+    // Fill the game window around the board with the theme's background.
+    static bool useBackground();
+    static void setUseBackground(bool use);
 
     // A small picture of a board in this theme (settings page).
     QPixmap preview(const QSize &size) const;

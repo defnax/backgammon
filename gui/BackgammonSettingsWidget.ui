@@ -183,6 +183,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="backgroundCheck">
+            <property name="text">
+             <string>Game window background in the board's colours</string>
+            </property>
+            <property name="toolTip">
+             <string>Fill the game window around the board with a colour that suits the board: green for the wooden boards, dark red for Marrakesh, ...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="themeHint">
             <property name="text">
              <string>Open games change colour right away.</string>

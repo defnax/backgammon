@@ -38,6 +38,7 @@
 #include <QCryptographicHash>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPointer>
 #include <QTimer>
 #include <QtEndian>
 
@@ -81,7 +82,6 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
     GxsIdDetails::process(peer, nameLoaded, this, QVariant(false));
     GxsIdDetails::process(local, nameLoaded, this, QVariant(true));
 
-    ui->resultLabel->hide();
     ui->cubeOfferFrame->hide();
     ui->board->setPosition(bg::Position::initial(variant));
 
@@ -107,6 +107,8 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
 
     ui->matchLabel->setText(tr("First to %n point(s)", "", m_length).toUpper());
     connect(&BoardThemeNotifier::instance(), &BoardThemeNotifier::changed, this, &BackgammonGameWindow::updateHeader);
+    connect(&BoardThemeNotifier::instance(), &BoardThemeNotifier::changed, this, &BackgammonGameWindow::updateWindowTheme);
+    updateWindowTheme();
     updateHeader();
     refresh();
     updateButtons();
@@ -141,6 +143,34 @@ static QPixmap colourDot(const QColor &colour)
     painter.setBrush(colour);
     painter.drawEllipse(QRectF(1, 1, 12, 12));
     return dot;
+}
+
+// With "Game window background in the board's colours" the whole window
+// gets the theme's background. The property "windowTheme" ("dark", "light",
+// or empty when off) lets gui/qss/Backgammon.qss pick readable text colours
+// and clear the header's skin background.
+void BackgammonGameWindow::updateWindowTheme()
+{
+    QString windowTheme;
+    if (BoardTheme::useBackground())
+        windowTheme = BoardTheme::current().background.lightness() < 128 ? QStringLiteral("dark")
+                                                                        : QStringLiteral("light");
+    if (property("windowTheme").toString() != windowTheme || !property("windowTheme").isValid()) {
+        setProperty("windowTheme", windowTheme);
+        BackgammonStyle::apply(this);   // restyles the window and everything in it
+        QTimer::singleShot(0, this, &BackgammonGameWindow::updateHeaderTextColour);
+    }
+    update();
+}
+
+void BackgammonGameWindow::paintEvent(QPaintEvent *event)
+{
+    if (BoardTheme::useBackground()) {
+        QPainter painter(this);
+        painter.fillRect(rect(), BoardTheme::current().background);
+        return;
+    }
+    QWidget::paintEvent(event);
 }
 
 void BackgammonGameWindow::showEvent(QShowEvent *event)
@@ -454,7 +484,8 @@ void BackgammonGameWindow::afterAction()
         const int mine = m_match->score(localSide()), theirs = m_match->score(remoteSide());
         BackgammonSounds::play(won ? BackgammonSounds::MatchWon : BackgammonSounds::MatchLost);
         finish(won ? tr("You won the match %1–%2!").arg(mine).arg(theirs)
-                   : tr("You lost the match %1–%2").arg(mine).arg(theirs));
+                   : tr("You lost the match %1–%2").arg(mine).arg(theirs),
+               won ? BackgammonResultDialog::Won : BackgammonResultDialog::Lost);
         return;
     }
     BackgammonSounds::play(won ? BackgammonSounds::GameWon : BackgammonSounds::GameLost);
@@ -612,7 +643,7 @@ void BackgammonGameWindow::remoteDoubleAnswer(bool take, int gameIndex, int ply)
 /* End of the match                                                        */
 /* ---------------------------------------------------------------------- */
 
-void BackgammonGameWindow::finish(const QString &message)
+void BackgammonGameWindow::finish(const QString &message, BackgammonResultDialog::Outcome outcome)
 {
     if (m_phase == Ended)
         return;
@@ -624,12 +655,33 @@ void BackgammonGameWindow::finish(const QString &message)
     updateHeader();   // nobody's turn any more
 
     ui->statusLabel->setText(message);
-    ui->resultLabel->setText(message);
-    ui->resultLabel->show();
+    log(message);
     refresh();
     updateButtons();
     emit summaryChanged();
     QApplication::alert(this);
+
+    if (m_closing || !isVisible())
+        return;
+    // A small popup over the board, shown once the current event is handled.
+    QString title;
+    switch (outcome) {
+    case BackgammonResultDialog::Won:  title = tr("You won!"); break;
+    case BackgammonResultDialog::Lost: title = tr("You lost"); break;
+    case BackgammonResultDialog::Neutral:
+        title = m_match ? tr("Game over") : tr("No game"); break;
+    }
+    const QString score = m_match ? tr("%1 %2 – %3 You").arg(m_opponentName)
+                                        .arg(m_match->score(remoteSide())).arg(m_match->score(localSide()))
+                                  : QString();
+    QPointer<BackgammonGameWindow> guard(this);
+    QTimer::singleShot(0, this, [guard, outcome, title, message, score] {
+        if (!guard || guard->m_closing || !guard->isVisible())
+            return;
+        auto *dialog = new BackgammonResultDialog(outcome, title, message, score, guard);
+        connect(dialog, &BackgammonResultDialog::closeGameRequested, guard.data(), &QWidget::close);
+        dialog->show();
+    });
 }
 
 bool BackgammonGameWindow::confirmResign(const QString &question)
@@ -652,7 +704,7 @@ void BackgammonGameWindow::onDeclineClicked()
     if (m_match)
         m_match->resign(localSide());
     BackgammonSounds::play(BackgammonSounds::Resign);
-    finish(tr("You resigned"));
+    finish(tr("You resigned"), BackgammonResultDialog::Lost);
 }
 
 void BackgammonGameWindow::closeEvent(QCloseEvent *event)
@@ -666,9 +718,11 @@ void BackgammonGameWindow::closeEvent(QCloseEvent *event)
             emit resignRequested();
             if (m_match)
                 m_match->resign(localSide());
-            finish(tr("You resigned"));
+            m_closing = true;
+            finish(tr("You resigned"), BackgammonResultDialog::Lost);
         }
     }
+    m_closing = true;
     emit closed();
     QWidget::closeEvent(event);
 }

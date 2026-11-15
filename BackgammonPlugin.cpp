@@ -100,6 +100,8 @@ MainPage *BackgammonPlugin::qt_page() const
             Settings->valueFromGroup("Backgammon", "ContactsOnly", false).toBool());
         BoardTheme::setCurrent(
             Settings->valueFromGroup("Backgammon", "BoardTheme", QString()).toString());
+        BoardTheme::setUseBackground(
+            Settings->valueFromGroup("Backgammon", "ThemeBackground", false).toBool());
         BackgammonSettings::applyDebugLogging();
         mMainPage = new BackgammonPage();
         mMainPage->setPageName(QObject::tr("Backgammon"));

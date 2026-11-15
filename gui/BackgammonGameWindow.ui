@@ -12,7 +12,7 @@
   <property name="windowTitle">
    <string>Backgammon</string>
   </property>
-  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,1">
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,1">
    <item>
     <widget class="QFrame" name="cubeOfferFrame">
      <layout class="QHBoxLayout" name="cubeOfferLayout">
@@ -52,19 +52,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="resultLabel">
-     <property name="textFormat">
-      <enum>Qt::TextFormat::PlainText</enum>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignmentFlag::AlignCenter</set>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
     </widget>
    </item>
    <item>

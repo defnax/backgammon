@@ -375,7 +375,8 @@ void BackgammonService::handlePacket(const RsGxsTunnelId &id, const QByteArray &
             BackgammonSounds::play(op == 'R' ? BackgammonSounds::Resign : BackgammonSounds::Declined);
         if (window->phase() == BackgammonGameWindow::Playing)
             window->finish(op == 'R' ? BackgammonGameWindow::tr("Your opponent resigned — you won the match!")
-                                     : BackgammonGameWindow::tr("Your opponent left — you won the match!"));
+                                     : BackgammonGameWindow::tr("Your opponent left — you won the match!"),
+                           BackgammonResultDialog::Won);
         else if (window->phase() == BackgammonGameWindow::Waiting)
             window->finish(BackgammonGameWindow::tr("Invitation declined"));
         else if (window->phase() != BackgammonGameWindow::Ended) {
