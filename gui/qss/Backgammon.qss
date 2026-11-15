@@ -65,6 +65,28 @@ BackgammonGameWindow[windowTheme="light"] QWidget#sidePanel QLabel {
 	color: #1a1a1a;
 }
 
+/* ---- Game window: Accept button of an invitation ----
+   Accept and Decline both stretch to the height of their row (sizePolicy in
+   the .ui), so they are the same height with any skin. */
+
+BackgammonGameWindow QPushButton#acceptButton {
+	color: white;
+	font-weight: bold;
+	padding: 3px 14px;
+	border: 1px solid #199909;
+	border-radius: 4px;
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2bc417, stop: 1 #14800a);
+}
+
+BackgammonGameWindow QPushButton#acceptButton:hover {
+	border-color: #35d51f;
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #35d51f, stop: 1 #18930c);
+}
+
+BackgammonGameWindow QPushButton#acceptButton:pressed {
+	background-color: #116a06;
+}
+
 /* ---- Game window: "Your opponent doubles to 2." ---- */
 
 QFrame#cubeOfferFrame {
