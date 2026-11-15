@@ -40,6 +40,9 @@ public:
     // Counter on the toolbar button: unanswered invitations.
     UserNotify *createUserNotify(QObject *parent) override;
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
     void invite();
     void refreshGames();

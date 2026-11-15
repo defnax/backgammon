@@ -34,6 +34,7 @@
 #include "gui/gxs/GxsIdTreeWidgetItem.h"
 #include "gui/settings/rsharesettings.h"
 
+#include <QTimer>
 #include <QMenu>
 #include <QPointer>
 #include <QMessageBox>
@@ -64,6 +65,11 @@ BackgammonPage::BackgammonPage(QWidget *parent)
     ui->opponentSelection->setModus(FriendSelectionWidget::MODUS_SINGLE);
     ui->opponentSelection->setShowType(FriendSelectionWidget::SHOW_GXS);
     ui->opponentSelection->start();
+    // FriendSelectionWidget skips filling its list while it is hidden: when the
+    // identities arrive while this tab or page is not shown, the list stays
+    // empty, and it only reloads by itself when it has no identities at all.
+    // So fill it again from the loaded identities whenever it is shown.
+    ui->opponentSelection->installEventFilter(this);
     // Right-click an identity: the menu of the list gets "Invite to play".
     ui->opponentSelection->addContextMenuAction(ui->actionInvite);
     ui->opponentSelection->addContextMenuAction(ui->actionAddPlayer);
@@ -97,7 +103,16 @@ BackgammonPage::BackgammonPage(QWidget *parent)
 
 BackgammonPage::~BackgammonPage()
 {
+    ui->opponentSelection->removeEventFilter(this);
     delete ui;
+}
+
+bool BackgammonPage::eventFilter(QObject *watched, QEvent *event)
+{
+    // Refill the identities list after it became visible (see the constructor).
+    if (watched == ui->opponentSelection && event->type() == QEvent::Show)
+        QTimer::singleShot(0, ui->opponentSelection, [this] { ui->opponentSelection->start(); });
+    return MainPage::eventFilter(watched, event);
 }
 
 void BackgammonPage::updateInviteButton()

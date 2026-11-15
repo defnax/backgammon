@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Backgammon</string>
   </property>
-  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,1,0,0">
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,1,0">
    <item>
     <layout class="QHBoxLayout" name="titleLayout">
      <item>
@@ -54,7 +54,7 @@
      <item>
       <spacer name="titleSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -91,7 +91,7 @@
       </sizepolicy>
      </property>
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="childrenCollapsible">
       <bool>false</bool>
@@ -181,7 +181,7 @@
            <item>
             <widget class="QTreeWidget" name="playersList">
              <property name="contextMenuPolicy">
-              <enum>Qt::CustomContextMenu</enum>
+              <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
              </property>
              <property name="toolTip">
               <string>Double-click a player to invite them</string>
@@ -205,7 +205,7 @@
            <item>
             <widget class="QLabel" name="playersHint">
              <property name="text">
-              <string>Players you have played with are added here. Add others from "All identities" with a right-click.</string>
+              <string>Players you have played with are added here. Add others from &quot;All&quot; with a right-click.</string>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
@@ -216,7 +216,7 @@
          </widget>
          <widget class="QWidget" name="identitiesTab">
           <attribute name="title">
-           <string>All identities</string>
+           <string>All</string>
           </attribute>
           <layout class="QVBoxLayout" name="identitiesLayout">
            <item>
@@ -249,7 +249,7 @@
        <item>
         <widget class="QListWidget" name="gamesList">
          <property name="contextMenuPolicy">
-          <enum>Qt::CustomContextMenu</enum>
+          <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
          </property>
          <property name="toolTip">
           <string>Double-click a game to bring its window to the front</string>
