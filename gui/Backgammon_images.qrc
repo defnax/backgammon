@@ -6,5 +6,6 @@
         <file alias="roll.png">../images/roll.png</file>
         <file alias="undo.png">../images/undo.png</file>
         <file alias="confirm.png">../images/confirm.png</file>
+        <file alias="settings.png">../images/settings.png</file>
     </qresource>
 </RCC>

@@ -70,8 +70,8 @@
         <string>Backgammon settings</string>
        </property>
        <property name="icon">
-        <iconset>
-         <normaloff>:/icons/png/settings.png</normaloff>:/icons/png/settings.png</iconset>
+        <iconset resource="Backgammon_images.qrc">
+         <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
        </property>
        <property name="iconSize">
         <size>
