@@ -24,6 +24,7 @@
 #include "gui/BackgammonSettingsPage.h"
 #include "gui/toaster/BackgammonToasterNotify.h"
 #include "gui/BoardTheme.h"
+#include "gui/BackgammonSettings.h"
 #include "services/BackgammonService.h"
 
 #include "gui/settings/rsharesettings.h"
@@ -99,6 +100,7 @@ MainPage *BackgammonPlugin::qt_page() const
             Settings->valueFromGroup("Backgammon", "ContactsOnly", false).toBool());
         BoardTheme::setCurrent(
             Settings->valueFromGroup("Backgammon", "BoardTheme", QString()).toString());
+        BackgammonSettings::applyDebugLogging();
         mMainPage = new BackgammonPage();
         mMainPage->setPageName(QObject::tr("Backgammon"));
         if (QIcon *icon = qt_icon())

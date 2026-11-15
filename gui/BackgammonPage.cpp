@@ -20,6 +20,7 @@
 
 #include "BackgammonPage.h"
 #include "ui_BackgammonPage.h"
+#include "BackgammonSettingsDialog.h"
 
 #include "BackgammonGameWindow.h"
 #include "BackgammonStyle.h"
@@ -49,6 +50,9 @@ BackgammonPage::BackgammonPage(QWidget *parent)
       ui(new Ui::BackgammonPage)
 {
     ui->setupUi(this);
+    connect(ui->settingsButton, &QToolButton::clicked, this, [this] {
+        BackgammonSettingsDialog::showSettings(this);
+    });
     BackgammonStyle::apply(this);
 
     // The "New game" column keeps its minimum width; "Your games" takes the rest.

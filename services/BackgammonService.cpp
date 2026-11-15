@@ -19,6 +19,7 @@
  *******************************************************************************/
 
 #include "BackgammonService.h"
+#include "BackgammonDebug.h"
 
 #include "gui/BackgammonGameWindow.h"
 #include "gui/BackgammonSettings.h"
@@ -61,6 +62,17 @@ constexpr int ReconnectRetryMs = 10000;
 // How long a finished match keeps its tunnel open for a rematch.
 constexpr int IdleTunnelMs = 30000;
 
+// First bytes of a match token, to tell matches apart in the logs.
+std::string shortToken(const QByteArray &token)
+{
+    return token.left(4).toHex().toStdString();
+}
+
+std::string jsonText(const QJsonObject &body)
+{
+    return QJsonDocument(body).toJson(QJsonDocument::Compact).toStdString();
+}
+
 QString variantName(bg::Variant variant)
 {
     return variant == bg::Variant::LongNardy ? QStringLiteral("nardy") : QStringLiteral("classic");
@@ -83,7 +95,12 @@ BackgammonService::BackgammonService()
 
 void BackgammonService::connectToGxsTunnelService(RsGxsTunnelService *service)
 {
-    if (service && service != m_net && service->registerClientService(ServiceId, this))
+    if (!service || service == m_net)
+        return;
+    const bool registered = service->registerClientService(ServiceId, this);
+    BG_TLOG("register client service 0x" << std::hex << ServiceId << std::dec
+            << (registered ? " ok" : " FAILED"));
+    if (registered)
         m_net = service;
 }
 
@@ -154,8 +171,15 @@ bool BackgammonService::send(const RsGxsTunnelId &id, const QByteArray &token, c
     QByteArray packet = Magic + token;
     packet.append(op);
     packet.append(QJsonDocument(body).toJson(QJsonDocument::Compact));
-    return m_net->sendData(id, ServiceId, reinterpret_cast<const uint8_t *>(packet.constData()),
-                           static_cast<uint32_t>(packet.size()));
+    const bool ok = m_net->sendData(id, ServiceId, reinterpret_cast<const uint8_t *>(packet.constData()),
+                                    static_cast<uint32_t>(packet.size()));
+    if (ok)
+        ++m_packets[id].sent;
+    BG_TLOG("send tunnel=" << id << " op=" << op << "(" << BackgammonDebug::opName(op) << ") "
+            << packet.size() << " bytes match=" << shortToken(token) << (ok ? "" : " FAILED"));
+    BG_GAMELOG("sent " << BackgammonDebug::opName(op) << " match=" << shortToken(token) << " "
+               << jsonText(body) << (ok ? "" : " (could not be sent)"));
+    return ok;
 }
 
 int BackgammonService::pendingInvitations() const
@@ -184,6 +208,7 @@ void BackgammonService::notifyTunnelStatus(const RsGxsTunnelId &id, uint32_t sta
 {
     if (m_stopped)
         return;
+    BG_TLOG("status tunnel=" << id << " " << BackgammonDebug::statusName(status));
     QMetaObject::invokeMethod(this, [this, id, status] { handleStatus(id, status); },
                               Qt::QueuedConnection);
 }
@@ -196,7 +221,11 @@ void BackgammonService::receiveData(const RsGxsTunnelId &id, unsigned char *data
         packet = QByteArray(reinterpret_cast<const char *>(data), static_cast<int>(size));
     std::free(data);
 
-    if (packet.isEmpty() || m_stopped)
+    if (packet.isEmpty()) {
+        BG_TLOG("receive tunnel=" << id << " " << size << " bytes: ignored (size out of range)");
+        return;
+    }
+    if (m_stopped)
         return;
     QMetaObject::invokeMethod(this, [this, id, packet] { handlePacket(id, packet); },
                               Qt::QueuedConnection);
@@ -240,6 +269,8 @@ void BackgammonService::reconnect(const RsGxsTunnelId &id)
     if (window->phase() == BackgammonGameWindow::Ended || window->linkDown())
         return;
     window->setLinkDown(true);
+    BG_TLOG("tunnel=" << id << " lost during match " << shortToken(it->second.token)
+            << ": asking for it every " << ReconnectRetryMs / 1000 << " s");
 
     const QByteArray token = it->second.token;
     const RsGxsId peer = window->peerId(), local = window->localId();
@@ -256,16 +287,21 @@ void BackgammonService::reconnect(const RsGxsTunnelId &id)
         // another service (re)created it.
         RsGxsTunnelId again;
         uint32_t code = 0;
-        if (m_net && m_net->requestSecuredTunnel(peer, local, again, ServiceId, code))
+        const bool requested = m_net && m_net->requestSecuredTunnel(peer, local, again, ServiceId, code);
+        BG_TLOG("reconnect tunnel=" << id << (requested ? ": requested" : ": request FAILED, error ") 
+                << (requested ? std::string() : std::to_string(code)));
+        if (requested)
             sendState(id, 'P');
     };
     connect(timer, &QTimer::timeout, window, attempt);
     timer->start(ReconnectRetryMs);
     QTimer::singleShot(0, window, attempt);
 
-    QTimer::singleShot(LinkGraceMs, window, [guard] {
-        if (guard && guard->linkDown())
+    QTimer::singleShot(LinkGraceMs, window, [guard, id] {
+        if (guard && guard->linkDown()) {
+            BG_TLOG("tunnel=" << id << " did not come back within " << LinkGraceMs / 1000 << " s: match ended");
             guard->finish(BackgammonGameWindow::tr("Connection to your opponent was lost"));
+        }
     });
 }
 
@@ -296,21 +332,33 @@ void BackgammonService::resendIfBehind(Session &session, const RsGxsTunnelId &id
 
 void BackgammonService::handlePacket(const RsGxsTunnelId &id, const QByteArray &packet)
 {
-    if (m_stopped || !packet.startsWith(Magic))
+    if (m_stopped)
         return;
+    if (!packet.startsWith(Magic)) {
+        BG_TLOG("receive tunnel=" << id << " " << packet.size() << " bytes: not a Backgammon packet, ignored");
+        return;
+    }
 
     const QByteArray token = packet.mid(4, TokenSize);
     const char op = packet.at(4 + TokenSize);
     const QJsonDocument document = QJsonDocument::fromJson(packet.mid(HeaderSize));
     const QJsonObject body = document.isObject() ? document.object() : QJsonObject();
+    ++m_packets[id].received;
+    BG_TLOG("receive tunnel=" << id << " op=" << op << "(" << BackgammonDebug::opName(op) << ") "
+            << packet.size() << " bytes match=" << shortToken(token));
 
     auto it = m_sessions.find(id);
     if (it == m_sessions.end() || it->second.token != token) {
         // Only an invitation can open a new match.
         if (op == 'I')
             handleInvite(id, token, body);
+        else
+            BG_GAMELOG("received " << BackgammonDebug::opName(op) << " for unknown match "
+                       << shortToken(token) << ": ignored");
         return;
     }
+    BG_GAMELOG("received " << BackgammonDebug::opName(op) << " match=" << shortToken(token) << " "
+               << jsonText(body));
 
     Session &session = it->second;
     BackgammonGameWindow *window = session.window;
@@ -446,7 +494,10 @@ bool BackgammonService::invite(const RsGxsId &peer, const RsGxsId &local, bg::Va
 
     RsGxsTunnelId id;
     uint32_t code = 0;
-    if (!m_net->requestSecuredTunnel(peer, local, id, ServiceId, code)) {
+    const bool requested = m_net->requestSecuredTunnel(peer, local, id, ServiceId, code);
+    BG_TLOG("request tunnel to " << peer << " from " << local << ": "
+            << (requested ? "ok tunnel=" : "FAILED error=") << (requested ? id.toStdString() : std::to_string(code)));
+    if (!requested) {
         if (error)
             *error = tr("Could not open a tunnel to this identity (error %1).").arg(code);
         return false;
@@ -469,6 +520,8 @@ bool BackgammonService::invite(const RsGxsId &peer, const RsGxsId &local, bg::Va
     session.localNonce = randomNonce();
     BackgammonGameWindow *window = makeWindow(id, peer, local, type, length);
     session.window = window;
+    BG_GAMELOG("invite " << peer << " to " << variantName(type).toStdString() << " to " << length
+               << " point(s), match=" << shortToken(session.token));
 
     // The core queues packets until the tunnel is ready; if it refuses,
     // the invitation goes out when the tunnel reports it can talk.
@@ -535,6 +588,8 @@ void BackgammonService::watchInvitation(const RsGxsTunnelId &id)
                           ? BackgammonGameWindow::tr("%1 did not answer your invitation.").arg(name)
                           : BackgammonGameWindow::tr("Invitation expired");
         if (!failure.isEmpty()) {
+            BG_GAMELOG("invitation " << shortToken(token) << " given up after " << elapsed / 1000 << " s: "
+                       << failure.toStdString());
             send(id, token, 'X');
             guard->finish(failure);
             timer->stop();
@@ -568,8 +623,10 @@ void BackgammonService::handleInvite(const RsGxsTunnelId &id, const QByteArray &
                                      const QJsonObject &body)
 {
     auto last = m_idle.find(id);
-    if (last != m_idle.end() && last->second == token)
-        return; // late copy of a closed match
+    if (last != m_idle.end() && last->second == token) {
+        BG_GAMELOG("invitation " << shortToken(token) << " ignored: late copy of a closed match");
+        return;
+    }
 
     auto it = m_sessions.find(id);
     BackgammonGameWindow *current = it == m_sessions.end() ? nullptr : it->second.window.data();
@@ -578,24 +635,40 @@ void BackgammonService::handleInvite(const RsGxsTunnelId &id, const QByteArray &
     // accepts it, so exactly one match starts.
     const bool crossed = current && it->second.inviter
                          && current->phase() == BackgammonGameWindow::Waiting;
-    if (crossed && token < it->second.token)
+    if (crossed && token < it->second.token) {
+        BG_GAMELOG("crossed invitations: ours wins, " << shortToken(token) << " ignored");
         return;
+    }
 
     RsGxsTunnelService::GxsTunnelInfo info;
-    if (!m_net || !m_net->getTunnelInfo(id, info) || !allowedPeer(info))
+    if (!m_net || !m_net->getTunnelInfo(id, info)) {
+        BG_GAMELOG("invitation " << shortToken(token) << " ignored: no tunnel information");
         return;
+    }
+    if (!allowedPeer(info)) {
+        BG_GAMELOG("invitation from " << info.destination_gxs_id << " refused: own, banned or unknown identity"
+                   << (m_contactsOnly ? " (only contacts allowed)" : ""));
+        return;
+    }
 
     const bg::Variant type = body.value("variant").toString() == QLatin1String("nardy")
                                  ? bg::Variant::LongNardy : bg::Variant::Backgammon;
     const int length = body.value("length").toInt(1);
     const QByteArray commit = QByteArray::fromHex(body.value("commit").toString().toLatin1());
     if (body.value("v").toInt() != ProtocolVersion || length < MIN_NUM_GAMES || length > MAX_NUM_GAMES
-            || commit.size() != 32)
+            || commit.size() != 32) {
+        BG_GAMELOG("invitation from " << info.destination_gxs_id << " refused: protocol version "
+                   << body.value("v").toInt() << " (want " << ProtocolVersion << "), length " << length
+                   << ", commitment " << commit.size() << " bytes");
         return;
+    }
 
     // Too many invitations waiting already: ignore new ones (flooding).
-    if (!crossed && pendingInvitations() >= MaxPendingInvitations)
+    if (!crossed && pendingInvitations() >= MaxPendingInvitations) {
+        BG_GAMELOG("invitation from " << info.destination_gxs_id << " refused: "
+                   << MaxPendingInvitations << " invitations already waiting");
         return;
+    }
 
     // A new invitation replaces an older match on this tunnel: a finished
     // one (rematch) or one the opponent has abandoned.
@@ -609,6 +682,8 @@ void BackgammonService::handleInvite(const RsGxsTunnelId &id, const QByteArray &
                                               type, length);
     session.window = window;
     window->setPhase(BackgammonGameWindow::Offered);
+    BG_GAMELOG("invitation from " << info.destination_gxs_id << " to " << variantName(type).toStdString()
+               << " to " << length << " point(s), match=" << shortToken(token) << (crossed ? " (crossed)" : ""));
     // Tell the inviter the invitation arrived (and that this plugin exists).
     send(id, token, 'O');
     // The window opens now, or later from "Your games" or the toaster.
@@ -761,6 +836,8 @@ BackgammonGameWindow *BackgammonService::makeWindow(const RsGxsTunnelId &id, con
                 || phase == BackgammonGameWindow::Confirming)
             send(id, token, 'X');
         m_sessions.erase(id);
+        BG_GAMELOG("match " << shortToken(token) << " window closed, tunnel kept "
+                   << IdleTunnelMs / 1000 << " s for a rematch");
         // Keep the tunnel for a quick rematch, then let it go.
         m_idle[id] = token;
         QTimer::singleShot(IdleTunnelMs, this, [this, id, token] { releaseWhenFlushed(id, token, 60); });
@@ -791,6 +868,8 @@ void BackgammonService::releaseWhenFlushed(const RsGxsTunnelId &id, const QByteA
     RsGxsTunnelService::GxsTunnelInfo info;
     if (!m_net->getTunnelInfo(id, info)) {
         m_idle.erase(it);
+        m_packets.erase(id);
+        BG_TLOG("tunnel=" << id << " already gone, nothing to close");
         return;
     }
     if (info.pending_data_packets && retries > 0) {
@@ -798,5 +877,54 @@ void BackgammonService::releaseWhenFlushed(const RsGxsTunnelId &id, const QByteA
         return;
     }
     m_idle.erase(it);
-    m_net->closeExistingTunnel(id, ServiceId);
+    m_packets.erase(id);
+    const bool closed = m_net->closeExistingTunnel(id, ServiceId);
+    BG_TLOG("close tunnel=" << id << (closed ? " ok" : " (not ours or already closed)")
+            << (info.pending_data_packets ? ", packets still unacknowledged" : ""));
+}
+
+/* ------------------------------------------------------------------------ */
+/* Tunnel traffic viewer                                                     */
+/* ------------------------------------------------------------------------ */
+
+bool BackgammonService::tunnelTraffic(std::vector<TunnelTraffic> &tunnels) const
+{
+    tunnels.clear();
+    if (!m_net)
+        return false;
+    std::map<RsGxsTunnelId, QString> used;
+    for (const auto &entry : m_sessions) {
+        const BackgammonGameWindow *window = entry.second.window;
+        if (!window)
+            continue;
+        QString what;
+        switch (window->phase()) {
+        case BackgammonGameWindow::Connecting: what = tr("Invitation: connecting"); break;
+        case BackgammonGameWindow::Waiting:    what = tr("Invitation sent"); break;
+        case BackgammonGameWindow::Offered:    what = tr("Invitation received"); break;
+        case BackgammonGameWindow::Confirming: what = tr("Starting"); break;
+        case BackgammonGameWindow::Playing:
+            what = window->linkDown() ? tr("Playing, reconnecting") : tr("Playing, game %1").arg(window->gameIndex() + 1);
+            break;
+        case BackgammonGameWindow::Ended:      what = tr("Match over"); break;
+        }
+        used[entry.first] = what;
+    }
+    for (const auto &entry : m_idle)
+        used.emplace(entry.first, tr("Idle (kept for a rematch)"));
+
+    for (const auto &entry : used) {
+        TunnelTraffic tunnel;
+        if (!m_net->getTunnelInfo(entry.first, tunnel.info))
+            continue;
+        tunnel.info.tunnel_id = entry.first;   // not filled in by getTunnelInfo()
+        tunnel.match = entry.second;
+        const auto count = m_packets.find(entry.first);
+        if (count != m_packets.end()) {
+            tunnel.packetsSent = count->second.sent;
+            tunnel.packetsReceived = count->second.received;
+        }
+        tunnels.push_back(tunnel);
+    }
+    return true;
 }

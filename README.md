@@ -52,24 +52,29 @@ kept between sessions (everyone you have played with is added, and others can
 be added from the other tab with a right-click), and **All identities**.
 Double-click a player to invite them; right-click to invite or remove.
 
+**Settings.** The settings button (gear) at the top right of the Backgammon
+page and next to *Resign* in the game window opens the *Backgammon Settings*
+window, with the pages General, Board, Sounds and Debug. The same settings
+are also in *Preferences → Backgammon*. Changes apply right away.
+
 A new invitation shows in **Your games** (in bold, with *Accept* and *Decline*
 buttons and a right-click menu), as a toaster with an *Accept* button, and as a
-counter on the Backgammon toolbar button. *Preferences → Backgammon* chooses
+counter on the Backgammon toolbar button. The settings choose
 whether the game window opens by itself and whether the toaster shows (the
 toaster can also be switched off in *Preferences → Notify*).
 
-*Only accept invitations from my contacts* (in *Preferences → Backgammon*) ignores invitations from
+*Only accept invitations from my contacts* (settings, General) ignores invitations from
 identities that are not in your contacts. Banned identities are always
 ignored.
 
-*Preferences → Backgammon* also chooses the board colours: Light wood
+The settings (Board) also choose the board colours: Light wood
 (default), RetroShare blue, Walnut, Red and black on sand, Red and black on
 brown, Green felt and Night. Themes live in `gui/BoardTheme.cpp`; open games
 change colour right away.
 
 The game plays sounds (from `sounds/`) for invitations, dice, checker moves,
-the opponent's turns, resignations and results. *Preferences → Backgammon*
-turns them on or off one by one and sets the volume; double-click an entry
+the opponent's turns, resignations and results. The settings (Sounds)
+turn them on or off one by one and sets the volume; double-click an entry
 to hear it. Nothing plays while RetroShare's sounds are muted.
 
 ## How it works
@@ -106,6 +111,26 @@ to hear it. Nothing plays while RetroShare's sounds are muted.
   one of the legal turns the local engine computed for that roll. Anything
   else stops the match.
 
+## Debugging
+
+Backgammon settings → Debug:
+
+* **Log tunnel activity** writes `backgammon_tunnels.log`: tunnel requests,
+  status changes, every packet sent and received (op and size), reconnection
+  attempts and closed tunnels.
+* **Log game activity** writes `backgammon_activity.log`: invitations sent,
+  received and refused (with the reason), match start and end, and every
+  game packet with its content.
+* **View traffic…** shows the tunnels of your matches, refreshed every
+  2 seconds: identities, status, what the tunnel is used for, RetroShare's
+  byte totals, Backgammon's own packet counts, unacknowledged packets.
+  It works without logging.
+
+The log files are in the RetroShare account folder ("Open log folder") and
+are rotated at 5 MB. Every line also goes to the console. The environment
+variable `BACKGAMMON_DEBUG` (`tunnel`, `game` or `all`) switches logging on
+for one session, including the start-up before the settings are loaded.
+
 ## Rules
 
 `core/` holds the rules, in plain C++ without Qt:
@@ -125,7 +150,7 @@ to hear it. Nothing plays while RetroShare's sounds are muted.
 | Folder      | Content |
 |-------------|---------|
 | `core/`     | Rules: `BgRules` (positions, legal turns, dice, game value) and `BgMatch` (games, cube, Crawford rule, score) |
-| `gui/`      | Main page, game window, settings page, board widget, themes and sounds. All windows are Designer `.ui` files. |
+| `gui/`      | Main page, game window, settings window and page, traffic viewer, board widget, themes and sounds. All windows are Designer `.ui` files. |
 | `services/` | `BackgammonService`: GXS tunnel client and match protocol |
 
 

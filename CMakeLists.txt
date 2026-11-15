@@ -28,6 +28,9 @@ set(BACKGAMMON_SOURCES
     gui/BackgammonPage.cpp
     gui/BackgammonGameWindow.cpp
     gui/BackgammonSettingsPage.cpp
+    gui/BackgammonSettingsWidget.cpp
+    gui/BackgammonSettingsDialog.cpp
+    gui/BackgammonTrafficDialog.cpp
     gui/BackgammonSettings.cpp
     gui/BackgammonSounds.cpp
     gui/BackgammonUserNotify.cpp
@@ -42,10 +45,14 @@ set(BACKGAMMON_HEADERS
     core/BgRules.h
     core/BgMatch.h
     services/BackgammonService.h
+    services/BackgammonDebug.h
     gui/BackgammonConstants.h
     gui/BackgammonPage.h
     gui/BackgammonGameWindow.h
     gui/BackgammonSettingsPage.h
+    gui/BackgammonSettingsWidget.h
+    gui/BackgammonSettingsDialog.h
+    gui/BackgammonTrafficDialog.h
     gui/BackgammonSettings.h
     gui/BackgammonSounds.h
     gui/BackgammonStyle.h
@@ -60,6 +67,9 @@ set(BACKGAMMON_FORMS
     gui/BackgammonPage.ui
     gui/BackgammonGameWindow.ui
     gui/BackgammonSettingsPage.ui
+    gui/BackgammonSettingsWidget.ui
+    gui/BackgammonSettingsDialog.ui
+    gui/BackgammonTrafficDialog.ui
     gui/InvitationItem.ui
     gui/toaster/BackgammonToaster.ui
 )

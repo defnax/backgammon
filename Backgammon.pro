@@ -56,6 +56,9 @@ SOURCES = BackgammonPlugin.cpp \
           gui/BackgammonPage.cpp \
           gui/BackgammonGameWindow.cpp \
           gui/BackgammonSettingsPage.cpp \
+          gui/BackgammonSettingsWidget.cpp \
+          gui/BackgammonSettingsDialog.cpp \
+          gui/BackgammonTrafficDialog.cpp \
           gui/BackgammonSounds.cpp \
           gui/BoardTheme.cpp \
           gui/BoardWidget.cpp \
@@ -68,10 +71,14 @@ HEADERS = BackgammonPlugin.h \
           core/BgRules.h \
           core/BgMatch.h \
           services/BackgammonService.h \
+          services/BackgammonDebug.h \
           gui/BackgammonConstants.h \
           gui/BackgammonPage.h \
           gui/BackgammonGameWindow.h \
           gui/BackgammonSettingsPage.h \
+          gui/BackgammonSettingsWidget.h \
+          gui/BackgammonSettingsDialog.h \
+          gui/BackgammonTrafficDialog.h \
           gui/BackgammonSounds.h \
           gui/BackgammonStyle.h \
           gui/BoardTheme.h \
@@ -84,6 +91,9 @@ HEADERS = BackgammonPlugin.h \
 FORMS = gui/BackgammonPage.ui \
         gui/BackgammonGameWindow.ui \
         gui/BackgammonSettingsPage.ui \
+        gui/BackgammonSettingsWidget.ui \
+        gui/BackgammonSettingsDialog.ui \
+        gui/BackgammonTrafficDialog.ui \
         gui/toaster/BackgammonToaster.ui \
         gui/InvitationItem.ui
 

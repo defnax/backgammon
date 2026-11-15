@@ -31,4 +31,12 @@ void setOpenInvitationWindow(bool enabled);
 // Show a toaster for new invitations (also in Preferences > Notify).
 bool invitationToaster();
 void setInvitationToaster(bool enabled);
+
+// Debug logs (see services/BackgammonDebug.h).
+bool tunnelLogging();
+void setTunnelLogging(bool enabled);
+bool gameLogging();
+void setGameLogging(bool enabled);
+// At start-up: log folder, and the logs switched on in the settings.
+void applyDebugLogging();
 }

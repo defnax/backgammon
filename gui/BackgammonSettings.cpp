@@ -20,7 +20,11 @@
 
 #include "BackgammonSettings.h"
 
+#include "services/BackgammonDebug.h"
+
 #include "gui/settings/rsharesettings.h"
+
+#include <retroshare/rsinit.h>
 
 namespace {
 const QString Group = QStringLiteral("Backgammon");
@@ -47,6 +51,38 @@ bool invitationToaster()
 void setInvitationToaster(bool enabled)
 {
     Settings->setValueToGroup(Group, "InvitationToaster", enabled);
+}
+
+bool tunnelLogging()
+{
+    return Settings->valueFromGroup(Group, "TunnelDebugLogging", false).toBool();
+}
+
+void setTunnelLogging(bool enabled)
+{
+    Settings->setValueToGroup(Group, "TunnelDebugLogging", enabled);
+    BackgammonDebug::setEnabled(BackgammonDebug::Tunnel, enabled);
+}
+
+bool gameLogging()
+{
+    return Settings->valueFromGroup(Group, "GameDebugLogging", false).toBool();
+}
+
+void setGameLogging(bool enabled)
+{
+    Settings->setValueToGroup(Group, "GameDebugLogging", enabled);
+    BackgammonDebug::setEnabled(BackgammonDebug::Game, enabled);
+}
+
+void applyDebugLogging()
+{
+    BackgammonDebug::setLogDirectory(RsAccounts::AccountDirectory());
+    // A log switched on with BACKGAMMON_DEBUG stays on for this session.
+    if (tunnelLogging())
+        BackgammonDebug::setEnabled(BackgammonDebug::Tunnel, true);
+    if (gameLogging())
+        BackgammonDebug::setEnabled(BackgammonDebug::Game, true);
 }
 
 }

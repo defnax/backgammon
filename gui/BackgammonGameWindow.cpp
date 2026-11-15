@@ -20,9 +20,11 @@
 
 #include "BackgammonGameWindow.h"
 #include "ui_BackgammonGameWindow.h"
+#include "BackgammonSettingsDialog.h"
 
 #include "BackgammonConstants.h"
 #include "BackgammonSounds.h"
+#include "services/BackgammonDebug.h"
 #include "BackgammonStyle.h"
 #include "BoardTheme.h"
 #include "BoardWidget.h"
@@ -53,6 +55,9 @@ BackgammonGameWindow::BackgammonGameWindow(const RsGxsId &peer, const RsGxsId &l
       m_length(length)
 {
     ui->setupUi(this);
+    connect(ui->settingsButton, &QToolButton::clicked, this, [this] {
+        BackgammonSettingsDialog::showSettings(this, BackgammonSettingsWidget::Board);
+    });
     BackgammonStyle::apply(this);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(ICON_PATH));
@@ -326,6 +331,8 @@ void BackgammonGameWindow::startMatch(const QByteArray &diceSeed, bool localIsWh
         return;
     m_seed = diceSeed;
     m_localWhite = localIsWhite;
+    BG_GAMELOG("match against " << m_opponentName.toStdString() << " started, you play "
+               << (localIsWhite ? "white" : "black"));
     m_match.reset(new bg::Match(m_variant, m_length));
     ui->board->setLocalSide(localSide());
 
@@ -609,6 +616,7 @@ void BackgammonGameWindow::finish(const QString &message)
 {
     if (m_phase == Ended)
         return;
+    BG_GAMELOG("match against " << m_opponentName.toStdString() << " ended: " << message.toStdString());
     m_phase = Ended;
     m_linkDown = false;
     ui->cubeOfferFrame->hide();

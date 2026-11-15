@@ -33,6 +33,7 @@
 
 #include <atomic>
 #include <map>
+#include <vector>
 
 #include "gui/BackgammonGameWindow.h"
 
@@ -84,6 +85,16 @@ public:
     QList<BackgammonGameWindow *> games() const;
     // Invitations received and not answered yet.
     int pendingInvitations() const;
+
+    // For the tunnel traffic viewer: the tunnels of this plugin's matches,
+    // with RetroShare's statistics and this plugin's own packet counts.
+    struct TunnelTraffic {
+        RsGxsTunnelService::GxsTunnelInfo info {};
+        QString match;               // what the tunnel is used for now
+        quint32 packetsSent = 0;     // Backgammon packets only
+        quint32 packetsReceived = 0;
+    };
+    bool tunnelTraffic(std::vector<TunnelTraffic> &tunnels) const;
 
     bool contactsOnly() const { return m_contactsOnly; }
     void setContactsOnly(bool contactsOnly) { m_contactsOnly = contactsOnly; }
@@ -142,4 +153,6 @@ private:
     bool m_gamesChangedPending = false;
     std::map<RsGxsTunnelId, Session> m_sessions;
     std::map<RsGxsTunnelId, QByteArray> m_idle; // finished matches, tunnel kept for a rematch
+    struct PacketCount { quint32 sent = 0; quint32 received = 0; };
+    std::map<RsGxsTunnelId, PacketCount> m_packets; // per tunnel, until it is closed
 };

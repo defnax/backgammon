@@ -24,10 +24,8 @@
 
 namespace Ui { class BackgammonSettingsPage; }
 
-class QListWidgetItem;
-
-// Preferences → Backgammon: switch the game sounds on and off.
-// Changes are saved immediately, like the other RetroShare settings pages.
+// Preferences -> Backgammon: the same settings as the standalone
+// Backgammon Settings dialog (BackgammonSettingsWidget).
 class BackgammonSettingsPage : public ConfigPage
 {
     Q_OBJECT
@@ -41,15 +39,6 @@ public:
     QString pageName() const override;
     QString helpText() const override;
 
-private slots:
-    void themeChanged(int index);
-    void soundsToggled(bool enabled);
-    void volumeChanged(int value);
-    void eventChanged(QListWidgetItem *item);
-    void eventActivated(QListWidgetItem *item);
-
 private:
-    void updatePreview();
-
     Ui::BackgammonSettingsPage *ui;
 };
