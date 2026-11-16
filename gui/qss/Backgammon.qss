@@ -58,11 +58,19 @@ BackgammonGameWindow[windowTheme="light"] QWidget#sidePanel {
 BackgammonGameWindow[windowTheme="dark"] QFrame#headerFrame QLabel,
 BackgammonGameWindow[windowTheme="dark"] QWidget#sidePanel QLabel {
 	color: white;
+	/* Some skins give labels their own box (white on the light skin):
+	   the text has to sit on the window colour. */
+	background: transparent;
+	border: none;
 }
 
 BackgammonGameWindow[windowTheme="light"] QFrame#headerFrame QLabel,
 BackgammonGameWindow[windowTheme="light"] QWidget#sidePanel QLabel {
 	color: #1a1a1a;
+	/* Some skins give labels their own box (white on the light skin):
+	   the text has to sit on the window colour. */
+	background: transparent;
+	border: none;
 }
 
 /* ---- Game window: Accept button of an invitation ----
